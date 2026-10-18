@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Activity,
+  Brain,
   ArrowUpRight,
   BookOpen,
   Check,
@@ -32,7 +33,8 @@ import {
   RotateCcw,
   Timer,
 } from "lucide-react";
-
+import PuzzleArena from "./components/PuzzleArena.jsx";
+import HydrationBottle from "./components/HydrationBottle.jsx";
 const STORAGE_KEY = "daybyday-data-v1";
 
 const QUOTE_LIBRARY = [
@@ -280,6 +282,20 @@ function App() {
   const [today, setToday] = useState(getToday);
   const [note, setNote] = useState("");
   const [waterGoal, setWaterGoal] = useState(8);
+  // Separate millilitre-based hydration storage keeps older glass records intact.
+  const HYDRATION_KEY = "daybyday-hydration-v1";
+  const [hydrationData, setHydrationData] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("daybyday-hydration-v1") || "null");
+      return saved && typeof saved === "object"
+          ? { capacityMl: Math.min(4000, Math.max(2000, Number(saved.capacityMl) || 3000)), days: saved.days && typeof saved.days === "object" ? saved.days : {} }
+          : { capacityMl: 3000, days: {} };
+    } catch {
+      return { capacityMl: 3000, days: {} };
+    }
+  });
+  const hydrationToday = hydrationData.days[today] || { intakeMl: 0, lastAddedMl: 0 };
+  const hydrationIntakeMl = Math.max(0, Number(hydrationToday.intakeMl) || 0);
   const [newHabit, setNewHabit] = useState("");
   const [addingHabit, setAddingHabit] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
@@ -454,6 +470,14 @@ function App() {
   }, [data]);
 
   useEffect(() => {
+    try {
+      localStorage.setItem(HYDRATION_KEY, JSON.stringify(hydrationData));
+    } catch {
+      // Hydration tracking remains usable if browser storage is unavailable.
+    }
+  }, [hydrationData]);
+
+  useEffect(() => {
     setNote(record.note || "");
   }, [today]);
 
@@ -487,6 +511,27 @@ function App() {
     updateRecord({
       water: Math.max(0, Math.min(30, (record.water || 0) + amount)),
     });
+  }
+
+  function addHydration(amountMl) {
+    const amount = Math.max(1, Math.min(2000, Math.round(Number(amountMl) || 0)));
+    if (!amount) return;
+    setHydrationData((previous) => {
+      const day = previous.days[today] || { intakeMl: 0, lastAddedMl: 0 };
+      return { ...previous, days: { ...previous.days, [today]: { intakeMl: Math.max(0, (Number(day.intakeMl) || 0) + amount), lastAddedMl: amount } } };
+    });
+  }
+
+  function undoHydration() {
+    setHydrationData((previous) => {
+      const day = previous.days[today] || { intakeMl: 0, lastAddedMl: 0 };
+      const lastAddedMl = Math.max(0, Number(day.lastAddedMl) || 0);
+      return { ...previous, days: { ...previous.days, [today]: { intakeMl: Math.max(0, (Number(day.intakeMl) || 0) - lastAddedMl), lastAddedMl: 0 } } };
+    });
+  }
+
+  function changeBottleCapacity(capacityMl) {
+    setHydrationData((previous) => ({ ...previous, capacityMl: Math.min(4000, Math.max(2000, Number(capacityMl) || 3000)) }));
   }
 
   function saveNote() {
@@ -683,8 +728,8 @@ function App() {
     },
     {
       label: "Water intake",
-      value: `${record.water || 0}/${waterGoal}`,
-      detail: "Glasses tracked today",
+      value: `${(hydrationIntakeMl / 1000).toFixed(2).replace(/\.?0+$/, "")} L`,
+      detail: `of ${(hydrationData.capacityMl / 1000).toFixed(2).replace(/\.?0+$/, "")} L bottle goal`,
       icon: Droplets,
     },
     {
@@ -701,11 +746,17 @@ function App() {
     { name: "My habits", icon: CheckCircle2 },
     { name: "Journal", icon: NotebookPen },
     { name: "Progress", icon: Activity },
+    { name: "Mind Arena", icon: Brain },
   ];
 
   function navigate(name) {
     setActiveTab(name);
     setMobileMenu(false);
+
+    // Mind Arena is a separate page, not a dashboard section.
+    if (name === "Mind Arena") {
+      return;
+    }
 
     const target = {
       Dashboard: "dashboard",
@@ -720,6 +771,8 @@ function App() {
       block: "start",
     });
   }
+
+
 
   return (
       <div className="min-h-screen bg-background text-gray-100">
@@ -887,822 +940,771 @@ function App() {
 
 
 
-          <div id="dashboard" className="mx-auto max-w-[1440px] scroll-mt-24 p-4 sm:p-8">
-            {/* Today's date and rotating motivation */}
+          {activeTab === "Mind Arena" ? (
+              <div className="mx-auto max-w-[1440px] p-4 sm:p-8">
+                <PuzzleArena />
+              </div>
+          ) : (
+              <div
+                  id="dashboard"
+                  className="mx-auto max-w-[1440px] scroll-mt-24 p-4 sm:p-8"
+              >
+                {/* Today's date and rotating motivation */}
 
-            <Card
-                style={{
-                  backgroundColor: "#F7F0E5",
-                  borderColor: "#E8D9C5",
-                  color: "#29241F",
-                }}
-                className="relative mb-8 overflow-hidden border-[#E8D9C5] bg-[#F7F0E5] p-5 text-[#29241F] shadow-[0_18px_55px_rgba(0,0,0,0.16)] sm:p-8"
-            >
+                <Card
+                    style={{
+                      backgroundColor: "#F7F0E5",
+                      borderColor: "#E8D9C5",
+                      color: "#29241F",
+                    }}
+                    className="relative mb-8 overflow-hidden border-[#E8D9C5] bg-[#F7F0E5] p-5 text-[#29241F] shadow-[0_18px_55px_rgba(0,0,0,0.16)] sm:p-8"
+                >
 
-            <div className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-[#D9A15B]/20 blur-3xl" />
-              <div className="pointer-events-none absolute -bottom-20 left-1/3 h-48 w-48 rounded-full bg-[#B96C43]/10 blur-3xl" />
-              <div className="relative grid gap-8 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-10">
-                <div className="flex flex-col justify-between border-b border-[#DCCAB2] pb-6 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-8">
-                  <div>
-                    <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#B96C43]/25 bg-white/50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#98512F]">
-                      <CalendarDays size={14} /> YOUR DAILY PAUSE
-                    </div>
-                    <p className="font-serif text-3xl font-semibold leading-tight tracking-tight text-[#29241F] sm:text-4xl">
-                      {formatDate(today).split(", ")[1]}
-                    </p>
-                    <p className="mt-2 text-sm font-medium text-[#76695C]">
-                      {formatDate(today).split(", ")[0]} · {today.slice(0, 4)} · A new page to write.
-                    </p>
-                  </div>
-                  <div className="mt-6 flex items-center gap-2 text-xs font-medium text-[#98512F]">
-                    <span className="h-2 w-2 rounded-full bg-[#B96C43]" />
-                    ONE DAY. ONE STEP. KEEP GOING.
-                  </div>
-                </div>
-
-                <div className="min-w-0">
-                  <div className="mb-5 flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#98512F]">A thought to carry with you</p>
-                      <p className="mt-1 text-xs text-[#8A7A69]">Wisdom from science, stories, and creative minds</p>
-                    </div>
-                    <span className="shrink-0 rounded-full border border-[#DCCAB2] bg-white/60 px-3 py-1.5 text-[11px] font-semibold tabular-nums text-[#76695C]">
-                      0{quoteIndex + 1} <span className="text-[#B96C43]">/</span> 05
-                    </span>
-                  </div>
-
-                  <div className="min-h-[145px]" aria-live="polite" aria-atomic="true">
-                    <Quote size={27} strokeWidth={1.6} className="mb-3 text-[#B96C43]/70" />
-                    <p className="font-serif text-2xl font-medium leading-[1.35] tracking-[-0.025em] text-[#29241F] sm:text-3xl sm:leading-[1.35]">
-                      “{dailyQuotes[quoteIndex].text}”
-                    </p>
-                    <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
+                  <div className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-[#D9A15B]/20 blur-3xl" />
+                  <div className="pointer-events-none absolute -bottom-20 left-1/3 h-48 w-48 rounded-full bg-[#B96C43]/10 blur-3xl" />
+                  <div className="relative grid gap-8 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-10">
+                    <div className="flex flex-col justify-between border-b border-[#DCCAB2] pb-6 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-8">
                       <div>
-                        <p className="text-sm font-bold text-[#29241F]">{dailyQuotes[quoteIndex].author}</p>
-                        <p className="mt-1 text-xs text-[#8A7A69]">{dailyQuotes[quoteIndex].source}</p>
-                      </div>
-                      <span className="rounded-md bg-[#E8D9C5]/70 px-2.5 py-1.5 text-[9px] font-bold tracking-[0.16em] text-[#98512F]">
-                        {dailyQuotes[quoteIndex].category}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="mt-6 flex items-center justify-between border-t border-[#DCCAB2] pt-4">
-                    <p className="text-[11px] text-[#8A7A69]">Let the words settle. Then take the next step.</p>
-                    <div className="flex items-center gap-2">
-                      <button
-                          type="button"
-                          onClick={() => setQuoteIndex((current) => (current - 1 + dailyQuotes.length) % dailyQuotes.length)}
-                          className="rounded-full border border-[#DCCAB2] bg-white/60 p-2.5 text-[#6F5A49] transition hover:border-[#B96C43] hover:bg-white hover:text-[#98512F]"
-                          aria-label="Previous quote"
-                      >
-                        <ChevronLeft size={16} />
-                      </button>
-                      <div className="flex items-center gap-1.5 px-1" aria-label={`Quote ${quoteIndex + 1} of ${dailyQuotes.length}`}>
-                        {dailyQuotes.map((quote, index) => (
-                            <button
-                                key={`${quote.author}-${index}`}
-                                type="button"
-                                onClick={() => setQuoteIndex(index)}
-                                className={`h-1.5 rounded-full transition-all duration-300 ${index === quoteIndex ? "w-6 bg-[#B96C43]" : "w-1.5 bg-[#CBB9A3] hover:bg-[#A88E75]"}`}
-                                aria-label={`Show quote ${index + 1}`}
-                            />
-                        ))}
-                      </div>
-                      <button
-                          type="button"
-                          onClick={() => setQuoteIndex((current) => (current + 1) % dailyQuotes.length)}
-                          className="rounded-full border border-[#DCCAB2] bg-white/60 p-2.5 text-[#6F5A49] transition hover:border-[#B96C43] hover:bg-white hover:text-[#98512F]"
-                          aria-label="Next quote"
-                      >
-                        <ChevronRight size={16} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            {/* Greeting */}
-            <div className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-              <div>
-                <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-lime-300/15 bg-lime-300/[0.06] px-3 py-1.5 text-xs text-lime-300">
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-lime-300" />
-                  YOUR DAILY RESET
-                </div>
-                <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                  {getGreeting()}. Keep building.
-                </h2>
-                <p className="mt-2 max-w-xl text-sm leading-6 text-muted">
-                  Small actions, repeated daily, create extraordinary results.
-                  Let's make today count.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2 self-start rounded-xl border border-white/[0.08] bg-panel px-4 py-3 sm:self-auto">
-                <div className="rounded-lg bg-lime-300/10 p-2 text-lime-300">
-                  <Trophy size={19} />
-                </div>
-                <div>
-                  <p className="text-xs text-muted">Daily goal</p>
-                  <p className="mt-0.5 text-sm font-semibold">
-                    {percentage === 100 ? "Completed!" : "Keep going"}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Summary cards */}
-            <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {stats.map(({ label, value, detail, icon: Icon }) => (
-                  <Card key={label} className="p-5">
-                    <div className="mb-5 flex items-center justify-between">
-                      <p className="text-sm text-muted">{label}</p>
-                      <div className="rounded-xl border border-white/[0.07] bg-white/[0.035] p-2.5 text-lime-300">
-                        <Icon size={19} />
-                      </div>
-                    </div>
-                    <p className="text-3xl font-semibold tracking-tight">{value}</p>
-                    <p className="mt-2 text-xs text-muted">{detail}</p>
-                  </Card>
-              ))}
-            </div>
-
-            {/* Full-year activity heatmap */}
-            <Card className="mb-8 p-5 sm:p-6">
-              <SectionTitle
-                  icon={Activity}
-
-                  title="Your consistency"
-                  subtitle={`Your ${calendarYear} calendar. Each square represents one day.`}
-                  right={
-                    <span className="text-xs text-muted">
-                       {activeDays} active days
-                    </span>
-                  }
-
-              />
-              <div className="overflow-x-auto pb-2">
-                <div className="min-w-[1000px]">
-                  <div
-                      className="mb-2 grid gap-x-5 gap-y-[3px] pl-8 text-[10px] text-muted"
-                      style={{ gridTemplateColumns: `repeat(${heatmapWeeks.length}, minmax(0, 1fr))` }}
-                  >
-                    {heatmapWeeks.map((week, weekIndex) => {
-
-                      const firstOfMonth = week.find(
-                          (day) => day && day.date.slice(8, 10) === "01"
-                      );
-
-                      const monthLabel = firstOfMonth
-                          ? new Date(`${firstOfMonth.date}T12:00:00`)
-                              .toLocaleDateString("en-US", { month: "short" })
-                          : "";
-
-                      return <span key={weekIndex}>{monthLabel}</span>;
-                    })}
-                  </div>
-                  <div className="flex gap-2">
-                    <div className="grid w-6 shrink-0 grid-rows-7 gap-[3px] text-[10px] text-muted">
-                      <span>Sun</span><span></span><span>Tue</span><span></span><span>Thu</span><span></span><span>Sat</span>
-                    </div>
-                    <div
-                        className="grid flex-1 gap-x-5 gap-y-[3px]"
-                        style={{ gridTemplateColumns: `repeat(${heatmapWeeks.length}, minmax(0, 1fr))` }}
-                    >
-                      {heatmapWeeks.map((week, weekIndex) => (
-                          <div
-                              key={weekIndex}
-                              className={`grid grid-rows-7 gap-1 ${
-                                  weekIndex > 0 &&
-                                  week.some((day) => day && day.date.slice(8, 10) === "01")
-                                      ? "ml-2"
-                                      : ""
-                              }`}
-                          >
-                            {Array.from({ length: 7 }, (_, dayIndex) => {
-                              const day = week[dayIndex];
-                              if (!day) return <span key={`empty-${weekIndex}-${dayIndex}`} className="aspect-square" />;
-                              const color = day.level === 0 ? "bg-white/[0.045]"
-                                  : day.level === 1 ? "bg-lime-300/25"
-                                      : day.level === 2 ? "bg-lime-300/45"
-                                          : day.level === 3 ? "bg-lime-300/70"
-                                              : "bg-lime-300";
-                              return (
-                                  <div
-                                      key={day.date}
-                                      title={`${formatDate(day.date)} — ${day.completed}/${day.total} habits completed`}
-                                      aria-label={`${day.date}: ${day.completed} of ${day.total} habits completed`}
-                                      className={`h-4 w-4 shrink-0 rounded-[3px] ${color}`}
-                                  />
-                              );
-                            })}
-                          </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                <p className="text-xs text-muted">Your history stays saved on this device. Keep showing up, one day at a time.</p>
-                <div className="flex items-center gap-1.5 text-[10px] text-muted">
-                  <span>Less</span>
-                  {["bg-white/[0.045]", "bg-lime-300/25", "bg-lime-300/45", "bg-lime-300/70", "bg-lime-300"].map((color) => (
-                      <span key={color} className={`h-3 w-3 rounded-[3px] ${color}`} />
-                  ))}
-                  <span>More</span>
-                </div>
-              </div>
-            </Card>
-
-            {/* Weekly analytics */}
-            <section id="analytics" className="mb-8 scroll-mt-24 space-y-6">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <Card className="p-5">
-                  <p className="text-sm text-muted">Weekly completion rate</p>
-                  <div className="mt-3 flex items-end justify-between gap-3">
-                    <p className="text-3xl font-semibold">{weeklyCompletionRate}%</p>
-                    <span className="rounded-lg bg-lime-300/10 px-2 py-1 text-xs text-lime-300">Last 7 days</span>
-                  </div>
-                  <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
-                    <div className="h-full rounded-full bg-lime-300 transition-all" style={{ width: `${weeklyCompletionRate}%` }} />
-                  </div>
-                </Card>
-                <Card className="p-5">
-                  <p className="text-sm text-muted">Habits completed this week</p>
-                  <p className="mt-3 text-3xl font-semibold">{weeklyCompletedHabits}<span className="ml-2 text-sm font-normal text-muted">of {habits.length * 7}</span></p>
-                  <p className="mt-2 text-xs text-muted">Across all your daily habits</p>
-                </Card>
-                <Card className="p-5">
-                  <p className="text-sm text-muted">Best day this week</p>
-                  <p className="mt-3 text-3xl font-semibold">{bestDayThisWeek.completed}/{bestDayThisWeek.total}</p>
-                  <p className="mt-2 text-xs text-muted">{bestDayThisWeek.completed ? new Date(`${bestDayThisWeek.date}T12:00:00`).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" }) : "Your next win can be today"}</p>
-                </Card>
-              </div>
-
-              <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-                <Card className="p-5 sm:p-6">
-                  <SectionTitle icon={Activity} title="Last 7 days" subtitle="Daily completion rate across your habits." />
-                  <div className="flex h-44 items-end justify-between gap-2 sm:gap-4">
-                    {last7Days.map((day) => (
-                        <div key={day.date} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2">
-                          <span className="text-[10px] text-muted">{day.percentage}%</span>
-                          <div className="flex h-28 w-full max-w-10 items-end overflow-hidden rounded-t-md bg-white/[0.04]">
-                            <div title={`${day.date}: ${day.percentage}%`} className="w-full rounded-t-md bg-lime-300 transition-all duration-500" style={{ height: `${day.percentage}%`, minHeight: day.percentage > 0 ? "4px" : "0" }} />
-                          </div>
-                          <span className="text-[10px] text-muted">{day.label}</span>
+                        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#B96C43]/25 bg-white/50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#98512F]">
+                          <CalendarDays size={14} /> YOUR DAILY PAUSE
                         </div>
-                    ))}
-                  </div>
-                </Card>
-
-                <Card className="p-5 sm:p-6">
-                  <SectionTitle icon={Target} title="Habit performance" subtitle="How often each habit was completed in the last 7 days." />
-                  {habitPerformance.length ? (
-                      <div className="space-y-4">
-                        {habitPerformance.map((habit) => (
-                            <div key={habit.id}>
-                              <div className="mb-2 flex items-center justify-between gap-3">
-                                <span className="truncate text-sm text-gray-200">{habit.name}</span>
-                                <span className="shrink-0 text-xs text-muted">{habit.completedDays}/7 · {habit.percentage}%</span>
-                              </div>
-                              <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
-                                <div className="h-full rounded-full bg-lime-300 transition-all duration-500" style={{ width: `${habit.percentage}%` }} />
-                              </div>
-                            </div>
-                        ))}
-                      </div>
-                  ) : <p className="text-sm text-muted">Add a habit to start tracking performance.</p>}
-                </Card>
-              </div>
-            </section>
-
-            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(300px,0.9fr)]">
-              {/* Habits */}
-              <div id="habits" className="scroll-mt-24 space-y-6">
-                <Card className="p-5 sm:p-6">
-                  <SectionTitle
-                      icon={CheckCircle2}
-                      title="Today's habits"
-                      subtitle="Every checkmark is a promise kept."
-                      right={
-                        <button
-                            onClick={() => setAddingHabit(!addingHabit)}
-                            className="flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs font-medium text-gray-300 transition hover:border-lime-300/40 hover:text-lime-300"
-                        >
-                          <Plus size={15} />
-                          <span className="hidden sm:inline">Add habit</span>
-                        </button>
-                      }
-                  />
-
-                  {addingHabit && (
-                      <form
-                          onSubmit={addHabit}
-                          className="mb-4 flex gap-2"
-                      >
-                        <input
-                            autoFocus
-                            value={newHabit}
-                            onChange={(event) => setNewHabit(event.target.value)}
-                            placeholder="e.g. Practice Java for 30 min"
-                            maxLength={60}
-                            className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-sm outline-none placeholder:text-gray-600 focus:border-lime-300/50"
-                        />
-                        <button
-                            type="submit"
-                            className="rounded-xl bg-lime-300 px-4 text-sm font-semibold text-gray-950 hover:bg-lime-200"
-                        >
-                          Add
-                        </button>
-                      </form>
-                  )}
-
-                  <div className="mb-5 rounded-xl border border-white/[0.06] bg-black/10 p-4">
-                    <div className="mb-3 flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-medium">Daily completion</p>
-                        <p className="mt-1 text-xs text-muted">
-                          {completedCount === habits.length && habits.length
-                              ? "You showed up for yourself today."
-                              : "Progress is progress, however small."}
+                        <p className="font-serif text-3xl font-semibold leading-tight tracking-tight text-[#29241F] sm:text-4xl">
+                          {formatDate(today).split(", ")[1]}
+                        </p>
+                        <p className="mt-2 text-sm font-medium text-[#76695C]">
+                          {formatDate(today).split(", ")[0]} · {today.slice(0, 4)} · A new page to write.
                         </p>
                       </div>
-                      <span className="text-xl font-semibold text-lime-300">
-                      {percentage}%
+                      <div className="mt-6 flex items-center gap-2 text-xs font-medium text-[#98512F]">
+                        <span className="h-2 w-2 rounded-full bg-[#B96C43]" />
+                        ONE DAY. ONE STEP. KEEP GOING.
+                      </div>
+                    </div>
+
+                    <div className="min-w-0">
+                      <div className="mb-5 flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#98512F]">A thought to carry with you</p>
+                          <p className="mt-1 text-xs text-[#8A7A69]">Wisdom from science, stories, and creative minds</p>
+                        </div>
+                        <span className="shrink-0 rounded-full border border-[#DCCAB2] bg-white/60 px-3 py-1.5 text-[11px] font-semibold tabular-nums text-[#76695C]">
+                      0{quoteIndex + 1} <span className="text-[#B96C43]">/</span> 05
                     </span>
-                    </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
-                      <div
-                          className="h-full rounded-full bg-lime-300 transition-all duration-500"
-                          style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                  </div>
+                      </div>
 
-                  <div className="space-y-2">
-                    {habits.map((habit) => {
-                      const Icon =
-                          DEFAULT_HABITS.find((item) => item.id === habit.id)?.icon
-                          || Target;
-                      const done = Boolean(record.completed?.[habit.id]);
+                      <div className="min-h-[145px]" aria-live="polite" aria-atomic="true">
+                        <Quote size={27} strokeWidth={1.6} className="mb-3 text-[#B96C43]/70" />
+                        <p className="font-serif text-2xl font-medium leading-[1.35] tracking-[-0.025em] text-[#29241F] sm:text-3xl sm:leading-[1.35]">
+                          “{dailyQuotes[quoteIndex].text}”
+                        </p>
+                        <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
+                          <div>
+                            <p className="text-sm font-bold text-[#29241F]">{dailyQuotes[quoteIndex].author}</p>
+                            <p className="mt-1 text-xs text-[#8A7A69]">{dailyQuotes[quoteIndex].source}</p>
+                          </div>
+                          <span className="rounded-md bg-[#E8D9C5]/70 px-2.5 py-1.5 text-[9px] font-bold tracking-[0.16em] text-[#98512F]">
+                        {dailyQuotes[quoteIndex].category}
+                      </span>
+                        </div>
+                      </div>
 
-                      return (
+                      <div className="mt-6 flex items-center justify-between border-t border-[#DCCAB2] pt-4">
+                        <p className="text-[11px] text-[#8A7A69]">Let the words settle. Then take the next step.</p>
+                        <div className="flex items-center gap-2">
                           <button
-                              key={habit.id}
-                              onClick={() => toggleHabit(habit.id)}
-                              className={`group flex w-full items-center gap-3 rounded-xl border p-3.5 text-left transition sm:p-4 ${
-                                  done
-                                      ? "border-lime-300/20 bg-lime-300/[0.045]"
-                                      : "border-white/[0.055] bg-white/[0.015] hover:border-white/[0.13] hover:bg-white/[0.035]"
-                              }`}
+                              type="button"
+                              onClick={() => setQuoteIndex((current) => (current - 1 + dailyQuotes.length) % dailyQuotes.length)}
+                              className="rounded-full border border-[#DCCAB2] bg-white/60 p-2.5 text-[#6F5A49] transition hover:border-[#B96C43] hover:bg-white hover:text-[#98512F]"
+                              aria-label="Previous quote"
                           >
-                            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
-                                done
-                                    ? "bg-lime-300/10 text-lime-300"
-                                    : "bg-white/[0.04] text-gray-400"
-                            }`}>
-                              <Icon size={19} />
-                            </div>
-
-                            <div className="min-w-0 flex-1">
-                              <p className={`text-sm font-medium ${
-                                  done ? "text-lime-100" : "text-gray-200"
-                              }`}>
-                                {habit.name}
-                              </p>
-                              <p className="mt-1 text-xs text-muted">
-                                {habit.detail}
-                              </p>
-                            </div>
-
-                            <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border transition ${
-                                done
-                                    ? "border-lime-300 bg-lime-300 text-gray-950"
-                                    : "border-white/20 text-transparent group-hover:border-lime-300/50"
-                            }`}>
-                              <Check size={15} strokeWidth={3} />
-                            </div>
+                            <ChevronLeft size={16} />
                           </button>
-                      );
-                    })}
+                          <div className="flex items-center gap-1.5 px-1" aria-label={`Quote ${quoteIndex + 1} of ${dailyQuotes.length}`}>
+                            {dailyQuotes.map((quote, index) => (
+                                <button
+                                    key={`${quote.author}-${index}`}
+                                    type="button"
+                                    onClick={() => setQuoteIndex(index)}
+                                    className={`h-1.5 rounded-full transition-all duration-300 ${index === quoteIndex ? "w-6 bg-[#B96C43]" : "w-1.5 bg-[#CBB9A3] hover:bg-[#A88E75]"}`}
+                                    aria-label={`Show quote ${index + 1}`}
+                                />
+                            ))}
+                          </div>
+                          <button
+                              type="button"
+                              onClick={() => setQuoteIndex((current) => (current + 1) % dailyQuotes.length)}
+                              className="rounded-full border border-[#DCCAB2] bg-white/60 p-2.5 text-[#6F5A49] transition hover:border-[#B96C43] hover:bg-white hover:text-[#98512F]"
+                              aria-label="Next quote"
+                          >
+                            <ChevronRight size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-
-                  <p className="mt-4 text-center text-xs text-gray-600">
-                    Your habits are saved automatically on this device.
-                  </p>
                 </Card>
 
-                {/* Journal */}
-                <Card id="journal" className="scroll-mt-24 p-5 sm:p-6">
+                {/* Greeting */}
+                <div className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+                  <div>
+                    <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-lime-300/15 bg-lime-300/[0.06] px-3 py-1.5 text-xs text-lime-300">
+                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-lime-300" />
+                      YOUR DAILY RESET
+                    </div>
+                    <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                      {getGreeting()}. Keep building.
+                    </h2>
+                    <p className="mt-2 max-w-xl text-sm leading-6 text-muted">
+                      Small actions, repeated daily, create extraordinary results.
+                      Let's make today count.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 self-start rounded-xl border border-white/[0.08] bg-panel px-4 py-3 sm:self-auto">
+                    <div className="rounded-lg bg-lime-300/10 p-2 text-lime-300">
+                      <Trophy size={19} />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted">Daily goal</p>
+                      <p className="mt-0.5 text-sm font-semibold">
+                        {percentage === 100 ? "Completed!" : "Keep going"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Summary cards */}
+                <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  {stats.map(({ label, value, detail, icon: Icon }) => (
+                      <Card key={label} className="p-5">
+                        <div className="mb-5 flex items-center justify-between">
+                          <p className="text-sm text-muted">{label}</p>
+                          <div className="rounded-xl border border-white/[0.07] bg-white/[0.035] p-2.5 text-lime-300">
+                            <Icon size={19} />
+                          </div>
+                        </div>
+                        <p className="text-3xl font-semibold tracking-tight">{value}</p>
+                        <p className="mt-2 text-xs text-muted">{detail}</p>
+                      </Card>
+                  ))}
+                </div>
+
+                {/* Full-year activity heatmap */}
+                <Card className="mb-8 p-5 sm:p-6">
                   <SectionTitle
-                      icon={NotebookPen}
-                      title="Daily reflection"
-                      subtitle="A few honest lines can change your tomorrow."
-                  />
+                      icon={Activity}
 
-                  <textarea
-                      value={note}
-                      onChange={(event) => {
-                        const value = event.target.value;
-                        setNote(value);
-                        updateRecord({ note: value });
-                      }}
-                      placeholder="What did you accomplish today? What challenged you? What is one thing you'll do better tomorrow?"
-                      rows={5}
-                      maxLength={1500}
-                      className="w-full rounded-xl border border-white/[0.08] bg-black/20 p-4 text-sm leading-6 text-gray-200 outline-none transition placeholder:text-gray-600 focus:border-lime-300/40"
-                  />
+                      title="Your consistency"
+                      subtitle={`Your ${calendarYear} calendar. Each square represents one day.`}
+                      right={
+                        <span className="text-xs text-muted">
+                       {activeDays} active days
+                    </span>
+                      }
 
-                  <div className="mt-3 flex items-center justify-between gap-3">
+                  />
+                  <div className="overflow-x-auto pb-2">
+                    <div className="min-w-[1000px]">
+                      <div
+                          className="mb-2 grid gap-x-5 gap-y-[3px] pl-8 text-[10px] text-muted"
+                          style={{ gridTemplateColumns: `repeat(${heatmapWeeks.length}, minmax(0, 1fr))` }}
+                      >
+                        {heatmapWeeks.map((week, weekIndex) => {
+
+                          const firstOfMonth = week.find(
+                              (day) => day && day.date.slice(8, 10) === "01"
+                          );
+
+                          const monthLabel = firstOfMonth
+                              ? new Date(`${firstOfMonth.date}T12:00:00`)
+                                  .toLocaleDateString("en-US", { month: "short" })
+                              : "";
+
+                          return <span key={weekIndex}>{monthLabel}</span>;
+                        })}
+                      </div>
+                      <div className="flex gap-2">
+                        <div className="grid w-6 shrink-0 grid-rows-7 gap-[3px] text-[10px] text-muted">
+                          <span>Sun</span><span></span><span>Tue</span><span></span><span>Thu</span><span></span><span>Sat</span>
+                        </div>
+                        <div
+                            className="grid flex-1 gap-x-5 gap-y-[3px]"
+                            style={{ gridTemplateColumns: `repeat(${heatmapWeeks.length}, minmax(0, 1fr))` }}
+                        >
+                          {heatmapWeeks.map((week, weekIndex) => (
+                              <div
+                                  key={weekIndex}
+                                  className={`grid grid-rows-7 gap-1 ${
+                                      weekIndex > 0 &&
+                                      week.some((day) => day && day.date.slice(8, 10) === "01")
+                                          ? "ml-2"
+                                          : ""
+                                  }`}
+                              >
+                                {Array.from({ length: 7 }, (_, dayIndex) => {
+                                  const day = week[dayIndex];
+                                  if (!day) return <span key={`empty-${weekIndex}-${dayIndex}`} className="aspect-square" />;
+                                  const color = day.level === 0 ? "bg-white/[0.045]"
+                                      : day.level === 1 ? "bg-lime-300/25"
+                                          : day.level === 2 ? "bg-lime-300/45"
+                                              : day.level === 3 ? "bg-lime-300/70"
+                                                  : "bg-lime-300";
+                                  return (
+                                      <div
+                                          key={day.date}
+                                          title={`${formatDate(day.date)} — ${day.completed}/${day.total} habits completed`}
+                                          aria-label={`${day.date}: ${day.completed} of ${day.total} habits completed`}
+                                          className={`h-4 w-4 shrink-0 rounded-[3px] ${color}`}
+                                      />
+                                  );
+                                })}
+                              </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-xs text-muted">Your history stays saved on this device. Keep showing up, one day at a time.</p>
+                    <div className="flex items-center gap-1.5 text-[10px] text-muted">
+                      <span>Less</span>
+                      {["bg-white/[0.045]", "bg-lime-300/25", "bg-lime-300/45", "bg-lime-300/70", "bg-lime-300"].map((color) => (
+                          <span key={color} className={`h-3 w-3 rounded-[3px] ${color}`} />
+                      ))}
+                      <span>More</span>
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Weekly analytics */}
+                <section id="analytics" className="mb-8 scroll-mt-24 space-y-6">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <Card className="p-5">
+                      <p className="text-sm text-muted">Weekly completion rate</p>
+                      <div className="mt-3 flex items-end justify-between gap-3">
+                        <p className="text-3xl font-semibold">{weeklyCompletionRate}%</p>
+                        <span className="rounded-lg bg-lime-300/10 px-2 py-1 text-xs text-lime-300">Last 7 days</span>
+                      </div>
+                      <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                        <div className="h-full rounded-full bg-lime-300 transition-all" style={{ width: `${weeklyCompletionRate}%` }} />
+                      </div>
+                    </Card>
+                    <Card className="p-5">
+                      <p className="text-sm text-muted">Habits completed this week</p>
+                      <p className="mt-3 text-3xl font-semibold">{weeklyCompletedHabits}<span className="ml-2 text-sm font-normal text-muted">of {habits.length * 7}</span></p>
+                      <p className="mt-2 text-xs text-muted">Across all your daily habits</p>
+                    </Card>
+                    <Card className="p-5">
+                      <p className="text-sm text-muted">Best day this week</p>
+                      <p className="mt-3 text-3xl font-semibold">{bestDayThisWeek.completed}/{bestDayThisWeek.total}</p>
+                      <p className="mt-2 text-xs text-muted">{bestDayThisWeek.completed ? new Date(`${bestDayThisWeek.date}T12:00:00`).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" }) : "Your next win can be today"}</p>
+                    </Card>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+                    <Card className="p-5 sm:p-6">
+                      <SectionTitle icon={Activity} title="Last 7 days" subtitle="Daily completion rate across your habits." />
+                      <div className="flex h-44 items-end justify-between gap-2 sm:gap-4">
+                        {last7Days.map((day) => (
+                            <div key={day.date} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2">
+                              <span className="text-[10px] text-muted">{day.percentage}%</span>
+                              <div className="flex h-28 w-full max-w-10 items-end overflow-hidden rounded-t-md bg-white/[0.04]">
+                                <div title={`${day.date}: ${day.percentage}%`} className="w-full rounded-t-md bg-lime-300 transition-all duration-500" style={{ height: `${day.percentage}%`, minHeight: day.percentage > 0 ? "4px" : "0" }} />
+                              </div>
+                              <span className="text-[10px] text-muted">{day.label}</span>
+                            </div>
+                        ))}
+                      </div>
+                    </Card>
+
+                    <Card className="p-5 sm:p-6">
+                      <SectionTitle icon={Target} title="Habit performance" subtitle="How often each habit was completed in the last 7 days." />
+                      {habitPerformance.length ? (
+                          <div className="space-y-4">
+                            {habitPerformance.map((habit) => (
+                                <div key={habit.id}>
+                                  <div className="mb-2 flex items-center justify-between gap-3">
+                                    <span className="truncate text-sm text-gray-200">{habit.name}</span>
+                                    <span className="shrink-0 text-xs text-muted">{habit.completedDays}/7 · {habit.percentage}%</span>
+                                  </div>
+                                  <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
+                                    <div className="h-full rounded-full bg-lime-300 transition-all duration-500" style={{ width: `${habit.percentage}%` }} />
+                                  </div>
+                                </div>
+                            ))}
+                          </div>
+                      ) : <p className="text-sm text-muted">Add a habit to start tracking performance.</p>}
+                    </Card>
+                  </div>
+                </section>
+
+                <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(300px,0.9fr)]">
+                  {/* Habits */}
+                  <div id="habits" className="scroll-mt-24 space-y-6">
+                    <Card className="p-5 sm:p-6">
+                      <SectionTitle
+                          icon={CheckCircle2}
+                          title="Today's habits"
+                          subtitle="Every checkmark is a promise kept."
+                          right={
+                            <button
+                                onClick={() => setAddingHabit(!addingHabit)}
+                                className="flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs font-medium text-gray-300 transition hover:border-lime-300/40 hover:text-lime-300"
+                            >
+                              <Plus size={15} />
+                              <span className="hidden sm:inline">Add habit</span>
+                            </button>
+                          }
+                      />
+
+                      {addingHabit && (
+                          <form
+                              onSubmit={addHabit}
+                              className="mb-4 flex gap-2"
+                          >
+                            <input
+                                autoFocus
+                                value={newHabit}
+                                onChange={(event) => setNewHabit(event.target.value)}
+                                placeholder="e.g. Practice Java for 30 min"
+                                maxLength={60}
+                                className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-sm outline-none placeholder:text-gray-600 focus:border-lime-300/50"
+                            />
+                            <button
+                                type="submit"
+                                className="rounded-xl bg-lime-300 px-4 text-sm font-semibold text-gray-950 hover:bg-lime-200"
+                            >
+                              Add
+                            </button>
+                          </form>
+                      )}
+
+                      <div className="mb-5 rounded-xl border border-white/[0.06] bg-black/10 p-4">
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-medium">Daily completion</p>
+                            <p className="mt-1 text-xs text-muted">
+                              {completedCount === habits.length && habits.length
+                                  ? "You showed up for yourself today."
+                                  : "Progress is progress, however small."}
+                            </p>
+                          </div>
+                          <span className="text-xl font-semibold text-lime-300">
+                      {percentage}%
+                    </span>
+                        </div>
+                        <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
+                          <div
+                              className="h-full rounded-full bg-lime-300 transition-all duration-500"
+                              style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        {habits.map((habit) => {
+                          const Icon =
+                              DEFAULT_HABITS.find((item) => item.id === habit.id)?.icon
+                              || Target;
+                          const done = Boolean(record.completed?.[habit.id]);
+
+                          return (
+                              <button
+                                  key={habit.id}
+                                  onClick={() => toggleHabit(habit.id)}
+                                  className={`group flex w-full items-center gap-3 rounded-xl border p-3.5 text-left transition sm:p-4 ${
+                                      done
+                                          ? "border-lime-300/20 bg-lime-300/[0.045]"
+                                          : "border-white/[0.055] bg-white/[0.015] hover:border-white/[0.13] hover:bg-white/[0.035]"
+                                  }`}
+                              >
+                                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                                    done
+                                        ? "bg-lime-300/10 text-lime-300"
+                                        : "bg-white/[0.04] text-gray-400"
+                                }`}>
+                                  <Icon size={19} />
+                                </div>
+
+                                <div className="min-w-0 flex-1">
+                                  <p className={`text-sm font-medium ${
+                                      done ? "text-lime-100" : "text-gray-200"
+                                  }`}>
+                                    {habit.name}
+                                  </p>
+                                  <p className="mt-1 text-xs text-muted">
+                                    {habit.detail}
+                                  </p>
+                                </div>
+
+                                <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border transition ${
+                                    done
+                                        ? "border-lime-300 bg-lime-300 text-gray-950"
+                                        : "border-white/20 text-transparent group-hover:border-lime-300/50"
+                                }`}>
+                                  <Check size={15} strokeWidth={3} />
+                                </div>
+                              </button>
+                          );
+                        })}
+                      </div>
+
+                      <p className="mt-4 text-center text-xs text-gray-600">
+                        Your habits are saved automatically on this device.
+                      </p>
+                    </Card>
+
+                    {/* Journal */}
+                    <Card id="journal" className="scroll-mt-24 p-5 sm:p-6">
+                      <SectionTitle
+                          icon={NotebookPen}
+                          title="Daily reflection"
+                          subtitle="A few honest lines can change your tomorrow."
+                      />
+
+                      <textarea
+                          value={note}
+                          onChange={(event) => {
+                            const value = event.target.value;
+                            setNote(value);
+                            updateRecord({ note: value });
+                          }}
+                          placeholder="What did you accomplish today? What challenged you? What is one thing you'll do better tomorrow?"
+                          rows={5}
+                          maxLength={1500}
+                          className="w-full rounded-xl border border-white/[0.08] bg-black/20 p-4 text-sm leading-6 text-gray-200 outline-none transition placeholder:text-gray-600 focus:border-lime-300/40"
+                      />
+
+                      <div className="mt-3 flex items-center justify-between gap-3">
                   <span className="text-xs text-muted">
                     {note.length}/1500 characters
                   </span>
-                    <span className="flex items-center gap-1.5 text-xs text-lime-300">
+                        <span className="flex items-center gap-1.5 text-xs text-lime-300">
                     <CheckCircle2 size={14} />
                     Auto-saved
                   </span>
-                  </div>
-                </Card>
-              </div>
-
-              {/* Right column */}
-              <div className="space-y-6">
-                {/* Streak engine */}
-                <Card className="p-5 sm:p-6">
-                  <SectionTitle
-                      icon={Flame}
-                      title="Consistency streak"
-                      subtitle="Show up a little every day."
-                  />
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-xl border border-orange-300/10 bg-orange-300/[0.05] p-4">
-                      <div className="flex items-center gap-2 text-orange-300">
-                        <Flame size={18} />
-                        <span className="text-xs">Current streak</span>
                       </div>
-                      <p className="mt-3 text-3xl font-semibold">{currentStreak} <span className="text-sm font-normal text-muted">days</span></p>
-                    </div>
-                    <div className="rounded-xl border border-lime-300/10 bg-lime-300/[0.05] p-4">
-                      <div className="flex items-center gap-2 text-lime-300">
-                        <Trophy size={18} />
-                        <span className="text-xs">Best streak</span>
+                    </Card>
+                  </div>
+
+                  {/* Right column */}
+                  <div className="space-y-6">
+                    {/* Streak engine */}
+                    <Card className="p-5 sm:p-6">
+                      <SectionTitle
+                          icon={Flame}
+                          title="Consistency streak"
+                          subtitle="Show up a little every day."
+                      />
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="rounded-xl border border-orange-300/10 bg-orange-300/[0.05] p-4">
+                          <div className="flex items-center gap-2 text-orange-300">
+                            <Flame size={18} />
+                            <span className="text-xs">Current streak</span>
+                          </div>
+                          <p className="mt-3 text-3xl font-semibold">{currentStreak} <span className="text-sm font-normal text-muted">days</span></p>
+                        </div>
+                        <div className="rounded-xl border border-lime-300/10 bg-lime-300/[0.05] p-4">
+                          <div className="flex items-center gap-2 text-lime-300">
+                            <Trophy size={18} />
+                            <span className="text-xs">Best streak</span>
+                          </div>
+                          <p className="mt-3 text-3xl font-semibold">{bestStreak} <span className="text-sm font-normal text-muted">days</span></p>
+                        </div>
                       </div>
-                      <p className="mt-3 text-3xl font-semibold">{bestStreak} <span className="text-sm font-normal text-muted">days</span></p>
-                    </div>
-                  </div>
-                  <div className="mt-4 flex items-center justify-between text-xs text-muted">
-                    <span>Longest individual habit streak</span>
-                    <span className="font-semibold text-gray-200">{longestHabitStreak} days</span>
-                  </div>
-                </Card>
-
-                {/* Water */}
-                <Card className="p-5 sm:p-6">
-                  <SectionTitle
-                      icon={Droplets}
-                      title="Hydration"
-                      subtitle="Small sips throughout the day."
-                  />
-
-                  <div className="flex items-center justify-between gap-3 rounded-xl border border-sky-400/10 bg-sky-400/[0.045] p-4">
-                    <div>
-                      <p className="text-3xl font-semibold">
-                        {record.water || 0}
-                        <span className="ml-1 text-sm font-normal text-muted">
-                        / {waterGoal} glasses
-                      </span>
-                      </p>
-                      <p className="mt-2 text-xs text-muted">
-                        {Math.round(((record.water || 0) / waterGoal) * 100)}%
-                        of your chosen goal
-                      </p>
-                    </div>
-                    <div className="rounded-2xl bg-sky-400/10 p-3 text-sky-300">
-                      <Droplets size={27} />
-                    </div>
-                  </div>
-
-                  <div className="my-4 grid grid-cols-8 gap-1.5">
-                    {Array.from({ length: waterGoal }, (_, index) => (
-                        <button
-                            key={index}
-                            onClick={() =>
-                                updateRecord({ water: index + 1 })
-                            }
-                            title={`Set water intake to ${index + 1} glasses`}
-                            className={`flex aspect-square items-center justify-center rounded-lg transition ${
-                                index < (record.water || 0)
-                                    ? "bg-sky-400/20 text-sky-300"
-                                    : "bg-white/[0.035] text-gray-600 hover:bg-white/[0.08]"
-                            }`}
-                        >
-                          <Droplets size={16} />
-                        </button>
-                    ))}
-                  </div>
-
-                  <div className="flex gap-2">
-                    <button
-                        onClick={() => changeWater(1)}
-                        className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-sky-400 py-3 text-sm font-semibold text-gray-950 transition hover:bg-sky-300"
-                    >
-                      <Plus size={17} />
-                      Add a glass
-                    </button>
-                    <button
-                        onClick={() => changeWater(-1)}
-                        disabled={!record.water}
-                        className="rounded-xl border border-white/10 px-4 text-sm text-gray-300 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-30"
-                    >
-                      −
-                    </button>
-                  </div>
-
-                  <p className="mt-3 text-xs leading-5 text-muted">
-                    One glass is a tracking unit. Adjust your goal to your needs.
-                  </p>
-
-                  <button
-                      onClick={() =>
-                          setWaterGoal((goal) => goal === 8 ? 10 : goal === 10 ? 6 : 8)
-                      }
-                      className="mt-2 text-xs text-sky-300 hover:text-sky-200"
-                  >
-                    Change goal ({waterGoal} glasses)
-                  </button>
-                </Card>
-
-                {/* Daily challenge */}
-                <Card className="relative overflow-hidden p-5 sm:p-6">
-                  <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-lime-300/[0.06] blur-2xl" />
-                  <div className="relative">
-                    <div className="mb-4 flex items-center justify-between">
-                      <div className="rounded-xl bg-lime-300/10 p-2.5 text-lime-300">
-                        <Flame size={21} />
+                      <div className="mt-4 flex items-center justify-between text-xs text-muted">
+                        <span>Longest individual habit streak</span>
+                        <span className="font-semibold text-gray-200">{longestHabitStreak} days</span>
                       </div>
-                      <span className="rounded-full border border-lime-300/15 bg-lime-300/[0.05] px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-lime-300">
+                    </Card>
+
+                    {/* Interactive millilitre-based hydration bottle */}
+                    <Card className="p-5 sm:p-6">
+                      <SectionTitle
+                          icon={Droplets}
+                          title="Hydration station"
+                          subtitle="Watch your bottle fill with every sip."
+                      />
+                      <HydrationBottle
+                          intakeMl={hydrationIntakeMl}
+                          capacityMl={hydrationData.capacityMl}
+                          onAdd={addHydration}
+                          onUndo={undoHydration}
+                          onCapacityChange={changeBottleCapacity}
+                      />
+                    </Card>
+
+                    {/* Daily challenge */}
+                    <Card className="relative overflow-hidden p-5 sm:p-6">
+                      <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-lime-300/[0.06] blur-2xl" />
+                      <div className="relative">
+                        <div className="mb-4 flex items-center justify-between">
+                          <div className="rounded-xl bg-lime-300/10 p-2.5 text-lime-300">
+                            <Flame size={21} />
+                          </div>
+                          <span className="rounded-full border border-lime-300/15 bg-lime-300/[0.05] px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-lime-300">
                       Daily reminder
                     </span>
-                    </div>
-                    <h3 className="text-lg font-semibold">The 1% rule</h3>
-                    <p className="mt-2 text-sm leading-6 text-muted">
-                      You don't have to transform your life in one day. Just
-                      improve a little, and repeat tomorrow.
-                    </p>
-                    <div className="mt-5 flex items-center gap-2 text-xs text-lime-300">
-                      <Sparkles size={15} />
-                      Consistency beats intensity.
-                    </div>
-                  </div>
-                </Card>
-
-                {/* Progress placeholder */}
-                <Card id="progress" className="scroll-mt-24 p-5 sm:p-6">
-                  <SectionTitle
-                      icon={Activity}
-                      title="Today's snapshot"
-                      subtitle="A quick look at your effort."
-                  />
-
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className="rounded-lg bg-lime-300/10 p-2 text-lime-300">
-                          <CheckCircle2 size={17} />
                         </div>
-                        <span className="text-sm text-gray-300">
+                        <h3 className="text-lg font-semibold">The 1% rule</h3>
+                        <p className="mt-2 text-sm leading-6 text-muted">
+                          You don't have to transform your life in one day. Just
+                          improve a little, and repeat tomorrow.
+                        </p>
+                        <div className="mt-5 flex items-center gap-2 text-xs text-lime-300">
+                          <Sparkles size={15} />
+                          Consistency beats intensity.
+                        </div>
+                      </div>
+                    </Card>
+
+                    {/* Progress placeholder */}
+                    <Card id="progress" className="scroll-mt-24 p-5 sm:p-6">
+                      <SectionTitle
+                          icon={Activity}
+                          title="Today's snapshot"
+                          subtitle="A quick look at your effort."
+                      />
+
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="rounded-lg bg-lime-300/10 p-2 text-lime-300">
+                              <CheckCircle2 size={17} />
+                            </div>
+                            <span className="text-sm text-gray-300">
                         Habits completed
                       </span>
-                      </div>
-                      <span className="text-sm font-semibold">
+                          </div>
+                          <span className="text-sm font-semibold">
                       {completedCount}
                     </span>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className="rounded-lg bg-sky-400/10 p-2 text-sky-300">
-                          <Droplets size={17} />
                         </div>
-                        <span className="text-sm text-gray-300">
-                        Glasses recorded
+
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="rounded-lg bg-sky-400/10 p-2 text-sky-300">
+                              <Droplets size={17} />
+                            </div>
+                            <span className="text-sm text-gray-300">
+                        Water consumed
                       </span>
-                      </div>
-                      <span className="text-sm font-semibold">
-                      {record.water || 0}
+                          </div>
+                          <span className="text-sm font-semibold">
+                      {hydrationIntakeMl >= 1000 ? `${(hydrationIntakeMl / 1000).toFixed(2).replace(/\.?0+$/, "")} L` : `${hydrationIntakeMl} ml`}
                     </span>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className="rounded-lg bg-violet-400/10 p-2 text-violet-300">
-                          <NotebookPen size={17} />
                         </div>
-                        <span className="text-sm text-gray-300">
+
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="rounded-lg bg-violet-400/10 p-2 text-violet-300">
+                              <NotebookPen size={17} />
+                            </div>
+                            <span className="text-sm text-gray-300">
                         Reflection
                       </span>
-                      </div>
-                      <span className={`text-xs font-medium ${
-                          note.trim() ? "text-lime-300" : "text-gray-500"
-                      }`}>
+                          </div>
+                          <span className={`text-xs font-medium ${
+                              note.trim() ? "text-lime-300" : "text-gray-500"
+                          }`}>
                       {note.trim() ? "Written" : "Not written"}
                     </span>
-                    </div>
-                  </div>
+                        </div>
+                      </div>
 
-                  <div className="mt-5 rounded-xl bg-white/[0.025] p-3">
-                    <div className="mb-2 flex items-center justify-between">
-                      <span className="text-xs text-muted">Today's effort</span>
-                      <span className="text-xs font-medium text-lime-300">
+                      <div className="mt-5 rounded-xl bg-white/[0.025] p-3">
+                        <div className="mb-2 flex items-center justify-between">
+                          <span className="text-xs text-muted">Today's effort</span>
+                          <span className="text-xs font-medium text-lime-300">
                       {percentage}%
                     </span>
-                    </div>
-                    <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
-                      <div
-                          className="h-full rounded-full bg-lime-300 transition-all duration-500"
-                          style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                  </div>
-                </Card>
-              </div>
-            </div>
-            <section
-                id="focus"
-                className="mx-auto max-w-[1440px] scroll-mt-24 px-4 pt-6 sm:px-8"
-            >
-              <Card className="overflow-hidden p-5 sm:p-8">
-                <SectionTitle
-                    icon={Timer}
-                    title="Focus Mode"
-                    subtitle="One task. One session. No distractions."
-                    right={
-                      <span className="rounded-full bg-lime-300/10 px-3 py-1.5 text-xs text-lime-300">
-          {focusSessions} sessions completed
-        </span>
-                    }
-                />
-
-                <div className="grid gap-8 lg:grid-cols-[1fr_1fr]">
-                  <div className="flex flex-col items-center justify-center rounded-2xl border border-white/[0.06] bg-black/20 p-6 sm:p-8">
-                    <div className="mb-5 flex items-center gap-2 text-sm text-muted">
-                      {focusMode === "focus" ? (
-                          <Timer size={17} className="text-lime-300" />
-                      ) : (
-                          <Coffee size={17} className="text-sky-300" />
-                      )}
-                      {focusMode === "focus" ? "FOCUS SESSION" : "SHORT BREAK"}
-                    </div>
-
-                    <p className="text-5xl font-semibold tracking-tight tabular-nums sm:text-7xl">
-                      {String(Math.floor(focusRemaining / 60)).padStart(2, "0")}
-                      :
-                      {String(focusRemaining % 60).padStart(2, "0")}
-                    </p>
-
-                    <p className="mt-4 text-sm text-muted">
-                      {focusRunning ? "Stay with your task." : "Ready when you are."}
-                    </p>
-
-                    <div className="mt-8 flex w-full max-w-sm gap-3">
-                      {!focusRunning ? (
-                          <button
-                              type="button"
-                              onClick={() => {
-                                if (focusRemaining <= 0) {
-                                  setFocusRemaining(
-                                      (focusMode === "focus" ? focusDuration : 5) * 60
-                                  );
-                                }
-                                setFocusEndAt(
-                                    Date.now() +
-                                    Math.max(1, focusRemaining) * 1000
-                                );
-                                setFocusRunning(true);
-                              }}
-                              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-lime-300 px-4 py-3 font-semibold text-gray-950 transition hover:bg-lime-200"
-                          >
-                            <Play size={17} />
-                            Start
-                          </button>
-                      ) : (
-                          <button
-                              type="button"
-                              onClick={() => {
-                                setFocusRemaining(
-                                    Math.max(
-                                        0,
-                                        Math.ceil((focusEndAt - Date.now()) / 1000)
-                                    )
-                                );
-                                setFocusRunning(false);
-                                setFocusEndAt(null);
-                              }}
-                              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-lime-300 px-4 py-3 font-semibold text-gray-950 transition hover:bg-lime-200"
-                          >
-                            <Pause size={17} />
-                            Pause
-                          </button>
-                      )}
-
-                      <button
-                          type="button"
-                          onClick={() => {
-                            setFocusRunning(false);
-                            setFocusEndAt(null);
-                            setFocusMode("focus");
-                            setFocusRemaining(focusDuration * 60);
-                          }}
-                          className="flex items-center justify-center gap-2 rounded-xl border border-white/10 px-4 py-3 text-sm text-gray-200 transition hover:bg-white/[0.05]"
-                      >
-                        <RotateCcw size={16} />
-                        Reset
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-6">
-                    <div>
-                      <label
-                          htmlFor="focus-task"
-                          className="mb-2 block text-sm font-medium text-gray-200"
-                      >
-                        What are you working on?
-                      </label>
-
-                      <input
-                          id="focus-task"
-                          value={focusTask}
-                          onChange={(event) => setFocusTask(event.target.value)}
-                          maxLength={100}
-                          placeholder="e.g. Solve 3 Java DSA problems"
-                          disabled={focusRunning}
-                          className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-gray-100 outline-none placeholder:text-gray-600 focus:border-lime-300/40 disabled:opacity-60"
-                      />
-                    </div>
-
-                    <div>
-                      <p className="mb-3 text-sm font-medium text-gray-200">
-                        Focus duration
-                      </p>
-
-                      <div className="grid grid-cols-3 gap-3">
-                        {[25, 45, 60].map((minutes) => (
-                            <button
-                                key={minutes}
-                                type="button"
-                                disabled={focusRunning}
-                                onClick={() => {
-                                  setFocusDuration(minutes);
-                                  setFocusRemaining(minutes * 60);
-                                  setFocusMode("focus");
-                                }}
-                                className={`rounded-xl border px-3 py-3 text-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                                    focusDuration === minutes && focusMode === "focus"
-                                        ? "border-lime-300/40 bg-lime-300/10 text-lime-300"
-                                        : "border-white/[0.08] text-gray-300 hover:bg-white/[0.04]"
-                                }`}
-                            >
-                              {minutes} min
-                            </button>
-                        ))}
+                        </div>
+                        <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                          <div
+                              className="h-full rounded-full bg-lime-300 transition-all duration-500"
+                              style={{ width: `${percentage}%` }}
+                          />
+                        </div>
                       </div>
-                    </div>
-
-                    <button
-                        type="button"
-                        disabled={focusRunning}
-                        onClick={() => {
-                          setFocusMode("break");
-                          setFocusRemaining(5 * 60);
-                        }}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl border border-sky-300/20 bg-sky-300/[0.05] px-4 py-3 text-sm text-sky-300 transition hover:bg-sky-300/10 disabled:opacity-50"
-                    >
-                      <Coffee size={17} />
-                      Set a 5-minute break
-                    </button>
-
-                    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
-                      <p className="text-xs uppercase tracking-wider text-muted">
-                        Your current task
-                      </p>
-                      <p className="mt-2 break-words font-medium text-gray-100">
-                        {focusTask.trim() || "Choose one task to focus on"}
-                      </p>
-                      <p className="mt-2 text-xs text-muted">
-                        Every completed focus session is a step forward.
-                      </p>
-                    </div>
+                    </Card>
                   </div>
                 </div>
-              </Card>
-            </section>
-            <footer className="mt-8 flex flex-col items-center justify-between gap-2 border-t border-white/[0.06] py-6 text-xs text-gray-600 sm:flex-row">
-              <p>DAYBYDAY · Built one day at a time.</p>
-              <p>Your journey. Your pace. Your progress.</p>
-            </footer>
-          </div>
+                <section
+                    id="focus"
+                    className="mx-auto max-w-[1440px] scroll-mt-24 px-4 pt-6 sm:px-8"
+                >
+                  <Card className="overflow-hidden p-5 sm:p-8">
+                    <SectionTitle
+                        icon={Timer}
+                        title="Focus Mode"
+                        subtitle="One task. One session. No distractions."
+                        right={
+                          <span className="rounded-full bg-lime-300/10 px-3 py-1.5 text-xs text-lime-300">
+          {focusSessions} sessions completed
+        </span>
+                        }
+                    />
+
+                    <div className="grid gap-8 lg:grid-cols-[1fr_1fr]">
+                      <div className="flex flex-col items-center justify-center rounded-2xl border border-white/[0.06] bg-black/20 p-6 sm:p-8">
+                        <div className="mb-5 flex items-center gap-2 text-sm text-muted">
+                          {focusMode === "focus" ? (
+                              <Timer size={17} className="text-lime-300" />
+                          ) : (
+                              <Coffee size={17} className="text-sky-300" />
+                          )}
+                          {focusMode === "focus" ? "FOCUS SESSION" : "SHORT BREAK"}
+                        </div>
+
+                        <p className="text-5xl font-semibold tracking-tight tabular-nums sm:text-7xl">
+                          {String(Math.floor(focusRemaining / 60)).padStart(2, "0")}
+                          :
+                          {String(focusRemaining % 60).padStart(2, "0")}
+                        </p>
+
+                        <p className="mt-4 text-sm text-muted">
+                          {focusRunning ? "Stay with your task." : "Ready when you are."}
+                        </p>
+
+                        <div className="mt-8 flex w-full max-w-sm gap-3">
+                          {!focusRunning ? (
+                              <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (focusRemaining <= 0) {
+                                      setFocusRemaining(
+                                          (focusMode === "focus" ? focusDuration : 5) * 60
+                                      );
+                                    }
+                                    setFocusEndAt(
+                                        Date.now() +
+                                        Math.max(1, focusRemaining) * 1000
+                                    );
+                                    setFocusRunning(true);
+                                  }}
+                                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-lime-300 px-4 py-3 font-semibold text-gray-950 transition hover:bg-lime-200"
+                              >
+                                <Play size={17} />
+                                Start
+                              </button>
+                          ) : (
+                              <button
+                                  type="button"
+                                  onClick={() => {
+                                    setFocusRemaining(
+                                        Math.max(
+                                            0,
+                                            Math.ceil((focusEndAt - Date.now()) / 1000)
+                                        )
+                                    );
+                                    setFocusRunning(false);
+                                    setFocusEndAt(null);
+                                  }}
+                                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-lime-300 px-4 py-3 font-semibold text-gray-950 transition hover:bg-lime-200"
+                              >
+                                <Pause size={17} />
+                                Pause
+                              </button>
+                          )}
+
+                          <button
+                              type="button"
+                              onClick={() => {
+                                setFocusRunning(false);
+                                setFocusEndAt(null);
+                                setFocusMode("focus");
+                                setFocusRemaining(focusDuration * 60);
+                              }}
+                              className="flex items-center justify-center gap-2 rounded-xl border border-white/10 px-4 py-3 text-sm text-gray-200 transition hover:bg-white/[0.05]"
+                          >
+                            <RotateCcw size={16} />
+                            Reset
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-6">
+                        <div>
+                          <label
+                              htmlFor="focus-task"
+                              className="mb-2 block text-sm font-medium text-gray-200"
+                          >
+                            What are you working on?
+                          </label>
+
+                          <input
+                              id="focus-task"
+                              value={focusTask}
+                              onChange={(event) => setFocusTask(event.target.value)}
+                              maxLength={100}
+                              placeholder="e.g. Solve 3 Java DSA problems"
+                              disabled={focusRunning}
+                              className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-gray-100 outline-none placeholder:text-gray-600 focus:border-lime-300/40 disabled:opacity-60"
+                          />
+                        </div>
+
+                        <div>
+                          <p className="mb-3 text-sm font-medium text-gray-200">
+                            Focus duration
+                          </p>
+
+                          <div className="grid grid-cols-3 gap-3">
+                            {[25, 45, 60].map((minutes) => (
+                                <button
+                                    key={minutes}
+                                    type="button"
+                                    disabled={focusRunning}
+                                    onClick={() => {
+                                      setFocusDuration(minutes);
+                                      setFocusRemaining(minutes * 60);
+                                      setFocusMode("focus");
+                                    }}
+                                    className={`rounded-xl border px-3 py-3 text-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                                        focusDuration === minutes && focusMode === "focus"
+                                            ? "border-lime-300/40 bg-lime-300/10 text-lime-300"
+                                            : "border-white/[0.08] text-gray-300 hover:bg-white/[0.04]"
+                                    }`}
+                                >
+                                  {minutes} min
+                                </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <button
+                            type="button"
+                            disabled={focusRunning}
+                            onClick={() => {
+                              setFocusMode("break");
+                              setFocusRemaining(5 * 60);
+                            }}
+                            className="flex w-full items-center justify-center gap-2 rounded-xl border border-sky-300/20 bg-sky-300/[0.05] px-4 py-3 text-sm text-sky-300 transition hover:bg-sky-300/10 disabled:opacity-50"
+                        >
+                          <Coffee size={17} />
+                          Set a 5-minute break
+                        </button>
+
+                        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                          <p className="text-xs uppercase tracking-wider text-muted">
+                            Your current task
+                          </p>
+                          <p className="mt-2 break-words font-medium text-gray-100">
+                            {focusTask.trim() || "Choose one task to focus on"}
+                          </p>
+                          <p className="mt-2 text-xs text-muted">
+                            Every completed focus session is a step forward.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                </section>
+                <footer className="mt-8 flex flex-col items-center justify-between gap-2 border-t border-white/[0.06] py-6 text-xs text-gray-600 sm:flex-row">
+                  <p>DAYBYDAY · Built one day at a time.</p>
+                  <p>Your journey. Your pace. Your progress.</p>
+                </footer>
+              </div>
+          )}
         </main>
 
         {notice && (
