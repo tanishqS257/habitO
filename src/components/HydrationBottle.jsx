@@ -20,163 +20,125 @@ function formatLitres(ml) {
     return `${(ml / 1000).toFixed(2)} L`;
 }
 
-function MiniBottle({ percentage }) {
-    const waterLevel = Math.min(percentage, 100);
+
+function CircularTank({ percentage }) {
+    const level = Math.min(100, Math.max(0, percentage));
+    const waterTop = 202 - 132 * (level / 100);
 
     return (
-        <div className="hb-bottle-wrap" aria-label={`Bottle ${waterLevel}% full`}>
-            <div className="hb-bottle-glow" />
+        <div
+            className="hb-tank-wrap"
+            aria-label={`Circular water tank ${level}% full`}
+        >
+            <div className="hb-tank-aura" />
 
             <svg
-                className="hb-bottle-svg"
-                viewBox="0 0 180 310"
+                className="hb-tank-svg"
+                viewBox="0 0 180 220"
                 role="img"
-                aria-label="Water bottle with animated water level"
+                aria-label={`Water level ${level}%`}
             >
                 <defs>
-                    <linearGradient id="hb-glass" x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="0%" stopColor="#48a9ff" stopOpacity=".5" />
-                        <stop offset="18%" stopColor="#ffffff" stopOpacity=".78" />
-                        <stop offset="50%" stopColor="#c9f5ff" stopOpacity=".28" />
-                        <stop offset="82%" stopColor="#ffffff" stopOpacity=".65" />
-                        <stop offset="100%" stopColor="#1684ef" stopOpacity=".55" />
+                    <linearGradient id="hb-tank-glass" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stopColor="#ffffff" stopOpacity=".22" />
+                        <stop offset="50%" stopColor="#cbd5e1" stopOpacity=".035" />
+                        <stop offset="100%" stopColor="#38bdf8" stopOpacity=".16" />
                     </linearGradient>
 
-                    <linearGradient id="hb-water" x1="0" y1="0" x2="0.8" y2="1">
-                        <stop offset="0%" stopColor="#58f1ff" />
-                        <stop offset="45%" stopColor="#16bafa" />
-                        <stop offset="100%" stopColor="#0870f5" />
+                    <linearGradient id="hb-tank-water" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#a5f3fc" />
+                        <stop offset="35%" stopColor="#38bdf8" />
+                        <stop offset="100%" stopColor="#0369a1" />
                     </linearGradient>
 
-                    <linearGradient id="hb-cap" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stopColor="#39c9ff" />
-                        <stop offset="45%" stopColor="#0879ef" />
-                        <stop offset="100%" stopColor="#0644ba" />
-                    </linearGradient>
-
-                    <clipPath id="hb-bottle-clip">
-                        <path d="M65 48 L115 48 L115 68 Q143 78 143 104 L143 253 Q143 280 118 280 L62 280 Q37 280 37 253 L37 104 Q37 78 65 68 Z" />
+                    <clipPath id="hb-tank-clip">
+                        <circle cx="90" cy="135" r="66" />
                     </clipPath>
-
-                    <filter id="hb-water-shadow" x="-30%" y="-30%" width="160%" height="160%">
-                        <feGaussianBlur stdDeviation="3" />
-                    </filter>
                 </defs>
 
-                {/* Bottle cap */}
-                <path
-                    d="M62 18 Q62 10 70 10 L110 10 Q118 10 118 18 L118 34 L62 34 Z"
-                    fill="url(#hb-cap)"
-                    stroke="#0754bd"
+                {/* Circular glass tank */}
+                <circle
+                    cx="90"
+                    cy="135"
+                    r="72"
+                    fill="#0b1720"
+                    stroke="#8ca6b8"
+                    strokeOpacity=".65"
                     strokeWidth="2"
                 />
-                <path
-                    d="M57 30 Q57 25 64 25 L116 25 Q123 25 123 32 L123 46 Q123 54 115 54 L65 54 Q57 54 57 46 Z"
-                    fill="url(#hb-cap)"
-                    stroke="#0b58bc"
-                    strokeWidth="2"
-                />
-                <path d="M67 33 L113 33" stroke="#8deaff" strokeWidth="2" opacity=".8" />
 
-                {/* Bottle body */}
-                <path
-                    d="M65 48 L115 48 L115 68 Q143 78 143 104 L143 253 Q143 280 118 280 L62 280 Q37 280 37 253 L37 104 Q37 78 65 68 Z"
-                    fill="url(#hb-glass)"
-                    stroke="#1478dc"
-                    strokeWidth="3"
+                <circle
+                    cx="90"
+                    cy="135"
+                    r="67"
+                    fill="url(#hb-tank-glass)"
+                    stroke="#e0f2fe"
+                    strokeOpacity=".65"
+                    strokeWidth="1.5"
                 />
 
-                {/* Animated water */}
-                <g clipPath="url(#hb-bottle-clip)">
+                {/* Animated water inside the circular tank */}
+                <g clipPath="url(#hb-tank-clip)">
                     <rect
-                        className="hb-water-fill"
-                        x="35"
-                        y={280 - 210 * (waterLevel / 100)}
-                        width="110"
-                        height={210 * (waterLevel / 100) + 8}
-                        fill="url(#hb-water)"
+                        x="23"
+                        y={waterTop}
+                        width="134"
+                        height={204 - waterTop}
+                        fill="url(#hb-tank-water)"
+                        className="hb-tank-fill"
                     />
+
                     <path
-                        className="hb-water-wave hb-water-wave-one"
-                        d={`M35 ${280 - 210 * (waterLevel / 100)} Q55 ${
-                            270 - 210 * (waterLevel / 100)
-                        } 75 ${280 - 210 * (waterLevel / 100)} T115 ${
-                            280 - 210 * (waterLevel / 100)
-                        } T155 ${280 - 210 * (waterLevel / 100)} L155 290 L35 290 Z`}
-                        fill="#b8fbff"
+                        d={`M20 ${waterTop} Q40 ${waterTop - 8} 60 ${waterTop} T100 ${waterTop} T140 ${waterTop} T180 ${waterTop} V210 H20 Z`}
+                        className="hb-tank-wave hb-tank-wave-a"
+                        fill="#cffafe"
                         opacity=".8"
                     />
+
                     <path
-                        className="hb-water-wave hb-water-wave-two"
-                        d={`M30 ${284 - 210 * (waterLevel / 100)} Q55 ${
-                            270 - 210 * (waterLevel / 100)
-                        } 80 ${284 - 210 * (waterLevel / 100)} T130 ${
-                            284 - 210 * (waterLevel / 100)
-                        } T180 ${284 - 210 * (waterLevel / 100)} L180 290 L30 290 Z`}
-                        fill="#37dfff"
-                        opacity=".65"
+                        d={`M20 ${waterTop + 4} Q40 ${waterTop - 1} 60 ${waterTop + 4} T100 ${waterTop + 4} T140 ${waterTop + 4} T180 ${waterTop + 4} V210 H20 Z`}
+                        className="hb-tank-wave hb-tank-wave-b"
+                        fill="#22d3ee"
+                        opacity=".5"
                     />
 
-                    <circle cx="65" cy="210" r="2.5" fill="#e4ffff" opacity=".8" />
-                    <circle cx="105" cy="185" r="3" fill="#e4ffff" opacity=".8" />
-                    <circle cx="83" cy="242" r="2" fill="#e4ffff" opacity=".8" />
+                    <circle className="hb-tank-bubble hb-tank-bubble-a" cx="62" cy="175" r="3" />
+                    <circle className="hb-tank-bubble hb-tank-bubble-b" cx="111" cy="165" r="2.5" />
+                    <circle className="hb-tank-bubble hb-tank-bubble-c" cx="88" cy="190" r="2" />
                 </g>
 
-                {/* Glass shine */}
+                {/* Glass reflections */}
                 <path
-                    d="M49 104 Q49 88 65 81"
-                    stroke="#ffffff"
-                    strokeWidth="4"
-                    strokeLinecap="round"
+                    d="M43 105 A55 55 0 0 1 67 83"
                     fill="none"
-                    opacity=".95"
-                />
-                <path
-                    d="M48 121 L48 239"
                     stroke="#ffffff"
                     strokeWidth="3"
                     strokeLinecap="round"
-                    opacity=".65"
-                />
-                <path
-                    d="M132 112 L132 245"
-                    stroke="#83d8ff"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    opacity=".65"
+                    opacity=".7"
                 />
 
-                {/* Measurement marks */}
-                {[115, 150, 185, 220, 255].map((y, i) => (
-                    <g key={y} opacity=".85">
-                        <path
-                            d={`M120 ${y} h${i % 2 === 0 ? 11 : 6}`}
-                            stroke="#ffffff"
-                            strokeWidth="1.5"
-                        />
-                    </g>
-                ))}
-
-                <path
-                    d="M43 270 Q90 290 137 270"
-                    stroke="#d8fbff"
-                    strokeWidth="2"
+                <circle
+                    cx="90"
+                    cy="135"
+                    r="72"
                     fill="none"
-                    opacity=".9"
+                    stroke="#d1fae5"
+                    strokeOpacity=".6"
+                    strokeWidth="1.5"
                 />
             </svg>
 
-            <div className="hb-bottle-base">
-                <span />
-            </div>
+            <div className="hb-tank-base" />
 
-            <div className="hb-bottle-percent">
+            <div className="hb-tank-level-pill">
                 <Droplets size={13} />
-                {Math.round(waterLevel)}%
+                <strong>{level}%</strong>
+                <span>filled</span>
             </div>
         </div>
     );
 }
+
 
 export default function HydrationBottle({
                                             intakeMl = 0,
@@ -258,7 +220,10 @@ export default function HydrationBottle({
 
     return (
         <section className="hb-section">
-            <div className="hb-card">
+            <div className={`hb-card ${isPouring ? "hb-card-pouring" : ""}`}>
+                <span className="hb-sr-only" aria-live="polite">
+                    {isPouring ? "Pouring water into your bottle" : "Hydration tracker ready"}
+                </span>
                 {/* Header */}
                 <header className="hb-header">
                     <div className="hb-brand-icon">
@@ -324,24 +289,47 @@ export default function HydrationBottle({
                         </div>
                     </div>
 
+
                     <div className={`hb-visual-panel ${isPouring ? "is-pouring" : ""}`}>
+                        <div className="hb-visual-caption">YOUR WATER TANK</div>
+
                         {isPouring && (
-                            <div key={pourKey} className="hb-pour-sparkle" aria-hidden="true">
-                                <span />
-                                <span />
-                                <span />
+                            <div
+                                key={pourKey}
+                                className="hb-pour-scene"
+                                aria-hidden="true"
+                            >
+                                <div className="hb-pour-glass">
+                                    <div className="hb-pour-glass-rim" />
+                                    <div className="hb-pour-glass-water" />
+                                    <div className="hb-pour-glass-shine" />
+                                </div>
+
+                                <span className="hb-pour-stream" />
+                                <span className="hb-pour-drop hb-pour-drop-a" />
+                                <span className="hb-pour-drop hb-pour-drop-b" />
                             </div>
                         )}
-                        <div className="hb-visual-caption">YOUR BOTTLE</div>
-                        <MiniBottle percentage={percentage} />
+                        <CircularTank percentage={percentage} />
+
+                        {isPouring && (
+                            <span
+                                key={`splash-${pourKey}`}
+                                className="hb-tank-splash"
+                                aria-hidden="true"
+                            />
+                        )}
+
                         <div className="hb-visual-amount">
                             <Droplets size={15} />
                             <span>{formatLitres(currentIntake)}</span>
                         </div>
+
                         <div className="hb-visual-subtitle">
                             {formatLitres(safeCapacity)} capacity
                         </div>
                     </div>
+
                 </div>
 
                 {/* Stats */}

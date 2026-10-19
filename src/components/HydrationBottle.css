@@ -318,7 +318,7 @@
     letter-spacing: 1.25px;
 }
 
-.hb-bottle-wrap {
+.hb-tank-wrap {
     position: relative;
     z-index: 1;
     display: flex;
@@ -1152,5 +1152,420 @@
         animation-iteration-count: 1 !important;
         scroll-behavior: auto !important;
         transition-duration: 0.01ms !important;
+    }
+}
+
+
+/* ========================================
+   DAYBYDAY DARK THEME OVERRIDES
+   Matches the charcoal + emerald dashboard;
+   cyan is reserved for the water itself.
+   ======================================== */
+.hb-section {
+    --hb-blue: #38bdf8;
+    --hb-blue-dark: #0284c7;
+    --hb-cyan: #67e8f9;
+    --hb-ink: #e5edf8;
+    --hb-muted: #8995a8;
+    --hb-line: rgba(255, 255, 255, 0.09);
+    max-width: none;
+    color: #e5edf8;
+}
+.hb-card {
+    isolation: isolate;
+    padding: clamp(13px, 2vw, 20px);
+    border: 1px solid rgba(255,255,255,.085);
+    border-radius: 18px;
+    background: radial-gradient(ellipse at 88% 0%, rgba(56,189,248,.085), transparent 35%),
+    linear-gradient(145deg, #171a23 0%, #12151d 72%, #11141b 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.025), 0 12px 32px rgba(0,0,0,.12);
+}
+.hb-card::before { background: rgba(56,189,248,.055); }
+.hb-header { gap: 10px; margin-bottom: 17px; }
+.hb-brand-icon, .hb-add-icon {
+    color: #c7f9e2;
+    background: linear-gradient(145deg, #244d3d, #173528);
+    border: 1px solid rgba(163,230,53,.18);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+}
+.hb-brand-icon { width: 39px; height: 39px; border-radius: 12px; }
+.hb-eyebrow { color: #a3e635; font-size: 8px; letter-spacing: 1.5px; }
+.hb-heading h2 { color: #f3f4f6; font-size: clamp(19px, 2.2vw, 24px); letter-spacing: -.65px; }
+.hb-heading p { color: #8995a8; font-size: 11px; }
+.hb-live-pill { padding: 6px 9px; border-color: rgba(163,230,53,.16); background: rgba(163,230,53,.055); color: #bef264; font-size: 10px; }
+.hb-live-dot { background: #a3e635; box-shadow: 0 0 0 4px rgba(163,230,53,.09); }
+.hb-main { grid-template-columns: minmax(0, 1fr) minmax(120px, .82fr); gap: 9px; }
+.hb-progress-label { color: #91a0b5; font-size: 8px; letter-spacing: 1.1px; }
+.hb-progress-label svg { color: #7dd3fc; }
+.hb-big-number { color: #f8fafc; font-size: clamp(27px, 3.6vw, 38px); letter-spacing: -1.5px; }
+.hb-goal-caption { color: #8995a8; font-size: 10px; }
+.hb-progress-track { height: 7px; margin-top: 15px; border-color: rgba(255,255,255,.045); background: rgba(255,255,255,.065); box-shadow: none; }
+.hb-progress-value { background: linear-gradient(90deg, #0ea5e9, #38bdf8 65%, #a3e635); box-shadow: 0 0 12px rgba(56,189,248,.18); }
+.hb-progress-bottom { color: #7f8da2; font-size: 9px; }
+.hb-progress-bottom span:first-child { color: #7dd3fc; }
+.hb-motivation { gap: 9px; margin-top: 17px; padding: 10px; border-color: rgba(255,255,255,.07); border-radius: 13px; background: rgba(255,255,255,.025); box-shadow: none; }
+.hb-motivation-icon { width: 30px; height: 30px; border-color: rgba(56,189,248,.15); border-radius: 10px; background: rgba(56,189,248,.1); color: #7dd3fc; }
+.hb-motivation strong { color: #e5edf8; font-size: 10px; }
+.hb-motivation p { color: #8492a7; font-size: 9px; }
+.hb-visual-panel {
+    min-width: 0;
+    min-height: 285px;
+    padding: 25px 8px 12px;
+    border: 1px solid rgba(56,189,248,.12);
+    border-radius: 16px;
+    background: radial-gradient(ellipse at 50% 45%, rgba(14,165,233,.11), transparent 57%),
+    linear-gradient(160deg, rgba(255,255,255,.035), rgba(255,255,255,.012));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.025);
+}
+.hb-visual-panel::before { background: rgba(56,189,248,.08); filter: blur(24px); }
+.hb-visual-panel::after { background: rgba(56,189,248,.12); }
+.hb-visual-caption { top: 12px; left: 11px; color: #8b9bb0; font-size: 7px; letter-spacing: 1.1px; }
+.hb-bottle-wrap { max-width: 158px; }
+.hb-bottle-svg { max-height: 220px; filter: drop-shadow(0 12px 12px rgba(0,0,0,.22)); }
+.hb-bottle-base { border-color: rgba(125,211,252,.45); background: linear-gradient(180deg, #7dd3fc, #0284c7 65%, #075985); box-shadow: 0 5px 14px rgba(14,165,233,.13), inset 0 1px 2px rgba(255,255,255,.35); }
+.hb-bottle-percent { margin-top: 5px; border-color: rgba(56,189,248,.18); background: #18232d; color: #7dd3fc; box-shadow: none; }
+.hb-visual-amount { color: #e5edf8; font-size: 11px; }
+.hb-visual-amount svg { color: #7dd3fc; }
+.hb-visual-subtitle { color: #8290a5; }
+.hb-stats { gap: 7px; margin-top: 11px; }
+.hb-stat { gap: 7px; padding: 10px 8px; border-color: rgba(255,255,255,.07); border-radius: 12px; background: rgba(255,255,255,.025); box-shadow: none; }
+.hb-stat-icon { width: 29px; height: 29px; border-color: rgba(56,189,248,.12); border-radius: 9px; background: rgba(56,189,248,.075); color: #7dd3fc; }
+.hb-stat span { color: #8290a5; font-size: 7px; letter-spacing: .08em; }
+.hb-stat strong { color: #e5edf8; font-size: 13px; }
+.hb-capacity-stat { color: inherit; cursor: pointer; }
+.hb-capacity-stat:hover { border-color: rgba(56,189,248,.25); background: rgba(56,189,248,.045); }
+.hb-edit-icon { color: #8290a5; }
+.hb-capacity-editor { margin-top: 12px; padding: 12px; border: 1px solid rgba(255,255,255,.07); border-radius: 13px; background: rgba(0,0,0,.13); animation: hb-reveal 180ms ease both; }
+.hb-section-label { color: #a3e635; }
+.hb-capacity-options { gap: 6px; }
+.hb-capacity-option { border-color: rgba(255,255,255,.08); border-radius: 9px; background: rgba(255,255,255,.025); color: #a8b3c4; }
+.hb-capacity-option:hover, .hb-capacity-option.active { border-color: rgba(163,230,53,.35); background: rgba(163,230,53,.08); color: #bef264; }
+.hb-add-section { margin-top: 14px; padding: 13px; border: 1px solid rgba(255,255,255,.07); border-radius: 15px; background: rgba(0,0,0,.12); }
+.hb-add-heading { gap: 9px; }
+.hb-add-icon { width: 31px; height: 31px; border-radius: 10px; }
+.hb-add-heading h3 { color: #f3f4f6; font-size: 12px; }
+.hb-add-heading p { color: #8290a5; font-size: 9px; }
+.hb-quick-actions { gap: 6px; }
+.hb-quick-button { min-width: 0; min-height: 67px; gap: 6px; padding: 8px 3px; border-color: rgba(56,189,248,.12); border-radius: 11px; background: rgba(56,189,248,.035); color: #d7e7f5; box-shadow: none; }
+.hb-quick-button:hover { transform: translateY(-2px); border-color: rgba(56,189,248,.35); background: rgba(56,189,248,.08); }
+.hb-quick-icon { width: 29px; height: 29px; border-color: rgba(56,189,248,.12); border-radius: 9px; background: rgba(56,189,248,.09); color: #7dd3fc; }
+.hb-quick-amount { gap: 3px; color: #e5edf8; font-size: 11px; }
+.hb-quick-amount small { color: #8b9bb0; }
+.hb-custom-form { border-color: rgba(255,255,255,.07); border-radius: 12px; background: rgba(255,255,255,.025); }
+.hb-custom-form label { color: #aab6c7; }
+.hb-custom-input-row input { border-color: rgba(255,255,255,.1); background: #0c1017; color: #f3f4f6; }
+.hb-custom-input-row input:focus { border-color: rgba(56,189,248,.45); box-shadow: 0 0 0 3px rgba(56,189,248,.07); }
+.hb-custom-input-row span { color: #8290a5; }
+.hb-add-button { border: 1px solid rgba(163,230,53,.22); background: linear-gradient(100deg, #a3e635, #bef264); color: #17220a; box-shadow: 0 5px 14px rgba(163,230,53,.08); }
+.hb-add-button:hover { background: #d9f99d; }
+.hb-undo-button { margin-top: 10px; border-color: rgba(255,255,255,.07); background: rgba(255,255,255,.025); color: #aab6c7; }
+.hb-undo-button:hover { border-color: rgba(255,255,255,.14); color: #f3f4f6; }
+.hb-undo-icon { background: rgba(163,230,53,.09); color: #bef264; }
+.hb-undo-hint { color: #718096; }
+.hb-footer { color: #738198; }
+.hb-footer svg { color: #7dd3fc; }
+.hb-section button:focus-visible, .hb-section input:focus-visible { outline: 2px solid #a3e635; outline-offset: 3px; }
+
+/* A tiny glass tilts and pours a stream on every addition. */
+.hb-pour-scene { position: absolute; top: 28px; right: 19%; z-index: 5; width: 84px; height: 142px; pointer-events: none; animation: hb-scene-enter 820ms ease-out both; }
+.hb-pour-glass { position: absolute; top: 0; right: 3px; width: 34px; height: 43px; overflow: hidden; border: 2px solid rgba(186,230,253,.9); border-top: 3px solid #e0f2fe; border-radius: 4px 4px 10px 10px; background: linear-gradient(100deg, rgba(255,255,255,.28), rgba(125,211,252,.08) 45%, rgba(255,255,255,.2)); box-shadow: inset 3px 0 4px rgba(255,255,255,.15), 0 4px 14px rgba(56,189,248,.14); transform-origin: 20% 85%; animation: hb-glass-tilt 820ms cubic-bezier(.35,.05,.3,1) both; }
+.hb-pour-glass-water { position: absolute; right: 1px; bottom: 1px; left: 1px; height: 72%; border-radius: 0 0 6px 6px; background: linear-gradient(180deg, #7dd3fc, #0ea5e9); animation: hb-glass-empty 820ms ease-in both; }
+.hb-pour-glass-shine { position: absolute; top: 5px; bottom: 5px; left: 5px; width: 3px; border-radius: 5px; background: rgba(255,255,255,.8); }
+.hb-pour-stream { position: absolute; top: 37px; right: 22px; width: 5px; height: 78px; border-radius: 100% 20% 60% 100%; background: linear-gradient(90deg, #bae6fd, #38bdf8 55%, rgba(56,189,248,.3)); filter: drop-shadow(0 0 4px rgba(56,189,248,.5)); transform: rotate(-9deg); transform-origin: top center; animation: hb-stream-flow 820ms ease-in both; }
+.hb-pour-drop { position: absolute; top: 108px; right: 22px; width: 6px; height: 9px; border-radius: 80% 20% 70% 70%; background: #7dd3fc; box-shadow: 0 0 7px rgba(56,189,248,.65); animation: hb-drop-fall 500ms ease-in infinite; }
+.hb-pour-drop-two { top: 88px; right: 32px; width: 4px; height: 6px; animation-delay: 140ms; }
+.hb-visual-panel.is-pouring .hb-bottle-svg { animation: hb-pour 600ms ease-in-out; }
+.hb-visual-panel.is-pouring .hb-bottle-wrap { animation: hb-bottle-receive 820ms ease-out; }
+.hb-visual-panel.is-pouring .hb-bottle-percent { animation: hb-percent-pop 500ms ease-out; }
+.hb-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+@keyframes hb-scene-enter { 0% { opacity: 0; transform: translate(12px,-8px) scale(.85); } 12% { opacity: 1; } 100% { opacity: 0; transform: translate(-7px,14px) scale(1); } }
+@keyframes hb-glass-tilt { 0%, 8% { transform: rotate(0) translateY(-4px); } 28%, 58% { transform: rotate(32deg) translateY(4px); } 76% { transform: rotate(14deg) translateY(0); } 100% { transform: rotate(0) translateY(-5px); } }
+@keyframes hb-glass-empty { 0%, 12% { height: 72%; } 65%, 100% { height: 12%; } }
+@keyframes hb-stream-flow { 0%, 10% { opacity: 0; transform: scaleY(.05) rotate(-9deg); } 24%, 70% { opacity: 1; transform: scaleY(1) rotate(-9deg); } 100% { opacity: 0; transform: scaleY(.1) rotate(-9deg); } }
+@keyframes hb-drop-fall { 0% { opacity: 0; transform: translateY(-8px) scale(.7); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateY(18px) scale(.45); } }
+@keyframes hb-bottle-receive { 0%, 100% { transform: translateY(0); } 35% { transform: translateY(2px) scale(1.012); } 65% { transform: translateY(-2px); } }
+@keyframes hb-percent-pop { 0% { transform: scale(.92); } 55% { transform: scale(1.08); } 100% { transform: scale(1); } }
+
+@media (max-width: 480px) {
+    .hb-card { padding: 13px; border-radius: 16px; }
+    .hb-main { grid-template-columns: minmax(0, 1fr) minmax(112px, .78fr); gap: 7px; }
+    .hb-visual-panel { min-height: 250px; padding-top: 25px; }
+    .hb-bottle-wrap { max-width: 132px; }
+    .hb-bottle-svg { max-height: 195px; }
+    .hb-pour-scene { top: 27px; right: 14%; transform: scale(.88); transform-origin: top right; }
+    .hb-stats { grid-template-columns: repeat(3, minmax(0,1fr)); }
+    .hb-stat { min-width: 0; }
+    .hb-stat strong { overflow-wrap: anywhere; }
+}
+@media (max-width: 350px) {
+    .hb-main { grid-template-columns: minmax(0, 1fr) minmax(100px, .72fr); }
+    .hb-heading h2 { font-size: 18px; }
+    .hb-visual-panel { min-height: 224px; }
+    .hb-bottle-svg { max-height: 174px; }
+    .hb-pour-scene { right: 9%; transform: scale(.76); }
+    .hb-quick-button { min-height: 62px; }
+}
+/* =========================================
+   DAYBYDAY — ANIMATED POURING GLASS
+   ========================================= */
+
+.hb-visual-panel {
+    position: relative;
+    overflow: hidden;
+}
+
+/* Keep the pouring animation above the tank */
+.hb-pour-scene {
+    position: absolute;
+    z-index: 5;
+    top: 42px;
+    left: calc(50% + 26px);
+    width: 72px;
+    height: 128px;
+    pointer-events: none;
+    filter: drop-shadow(0 5px 12px rgba(56, 189, 248, 0.16));
+    animation: hb-pour-enter 850ms ease-out both;
+}
+
+/* The tilted transparent glass */
+.hb-pour-glass {
+    position: absolute;
+    top: 0;
+    left: 7px;
+    width: 39px;
+    height: 49px;
+    overflow: hidden;
+    border: 2px solid rgba(186, 230, 253, 0.85);
+    border-top: 3px solid #bae6fd;
+    border-radius: 5px 5px 12px 12px;
+    background: linear-gradient(
+            115deg,
+            rgba(255, 255, 255, 0.24),
+            rgba(56, 189, 248, 0.07) 55%,
+            rgba(255, 255, 255, 0.15)
+    );
+    transform: rotate(36deg);
+    transform-origin: 50% 15%;
+    animation: hb-glass-tilt 850ms ease-in-out both;
+}
+
+/* Water inside the glass */
+.hb-pour-glass-water {
+    position: absolute;
+    right: 1px;
+    bottom: 1px;
+    left: 1px;
+    height: 65%;
+    border-radius: 0 0 9px 9px;
+    background: linear-gradient(
+            180deg,
+            #a5f3fc,
+            #38bdf8 55%,
+            #0284c7
+    );
+    opacity: 0.9;
+    animation: hb-glass-water-shift 850ms ease-in-out both;
+}
+
+.hb-pour-glass-rim {
+    position: absolute;
+    z-index: 2;
+    top: -2px;
+    right: -3px;
+    left: -3px;
+    height: 5px;
+    border: 1px solid #bae6fd;
+    border-radius: 50%;
+    background: rgba(125, 211, 252, 0.28);
+}
+
+.hb-pour-glass-shine {
+    position: absolute;
+    z-index: 3;
+    top: 10px;
+    left: 6px;
+    width: 3px;
+    height: 17px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.8);
+    transform: rotate(-5deg);
+}
+
+/* Flowing stream from the glass to the tank */
+.hb-pour-stream {
+    position: absolute;
+    top: 37px;
+    left: 12px;
+    width: 5px;
+    height: 73px;
+    border-radius: 50%;
+    opacity: 0;
+    background: linear-gradient(
+            90deg,
+            rgba(186, 230, 253, 0.8),
+            #38bdf8 50%,
+            rgba(56, 189, 248, 0.35)
+    );
+    box-shadow: 0 0 9px rgba(56, 189, 248, 0.35);
+    transform: rotate(-9deg);
+    transform-origin: top center;
+    animation: hb-stream-flow 850ms ease-in both;
+}
+
+/* Small falling water droplets */
+.hb-pour-drop {
+    position: absolute;
+    z-index: 2;
+    top: 63px;
+    left: 13px;
+    width: 6px;
+    height: 9px;
+    border-radius: 60% 40% 60% 60%;
+    background: #7dd3fc;
+    opacity: 0;
+    animation: hb-drop-fall 650ms ease-in infinite;
+}
+
+.hb-pour-drop-a {
+    animation-delay: 100ms;
+}
+
+.hb-pour-drop-b {
+    left: 22px;
+    width: 4px;
+    height: 6px;
+    animation-delay: 300ms;
+}
+
+/* Water splashes when the stream reaches the tank */
+.hb-tank-splash {
+    position: absolute;
+    z-index: 4;
+    top: 125px;
+    left: 50%;
+    width: 38px;
+    height: 13px;
+    border-top: 2px solid rgba(165, 243, 252, 0.95);
+    border-radius: 50%;
+    transform: translateX(-50%);
+    pointer-events: none;
+    animation: hb-tank-splash 500ms ease-out both;
+}
+
+.hb-visual-panel.is-pouring .hb-tank-wrap {
+    animation: hb-tank-impact 450ms ease-out;
+}
+
+.hb-visual-panel.is-pouring .hb-tank-wave {
+    animation-duration: 600ms;
+}
+
+/* Animation keyframes */
+@keyframes hb-pour-enter {
+    0% {
+        opacity: 0;
+        transform: translate(15px, -12px) scale(0.8);
+    }
+    20% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1);
+    }
+}
+
+@keyframes hb-glass-tilt {
+    0%,
+    100% {
+        transform: rotate(36deg);
+    }
+    20%,
+    75% {
+        transform: rotate(58deg);
+    }
+}
+
+@keyframes hb-glass-water-shift {
+    0% {
+        height: 65%;
+    }
+    55% {
+        height: 45%;
+    }
+    100% {
+        height: 50%;
+    }
+}
+
+@keyframes hb-stream-flow {
+    0% {
+        opacity: 0;
+        transform: scaleY(0.1) rotate(-9deg);
+    }
+    20%,
+    72% {
+        opacity: 1;
+        transform: scaleY(1) rotate(-9deg);
+    }
+    100% {
+        opacity: 0;
+        transform: scaleY(0.25) rotate(-9deg);
+    }
+}
+
+@keyframes hb-drop-fall {
+    0% {
+        opacity: 0;
+        transform: translateY(-5px) scale(0.6);
+    }
+    25% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(43px) scale(0.8);
+    }
+}
+
+@keyframes hb-tank-splash {
+    0% {
+        opacity: 0;
+        transform: translateX(-50%) scale(0.4);
+    }
+    40% {
+        opacity: 1;
+        transform: translateX(-50%) scale(1.2);
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(-50%) scale(1.7);
+    }
+}
+
+@keyframes hb-tank-impact {
+    0%,
+    100% {
+        transform: scale(1);
+    }
+    45% {
+        transform: scale(1.035);
+    }
+}
+
+/* Accessibility: respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    .hb-pour-scene,
+    .hb-pour-glass,
+    .hb-pour-glass-water,
+    .hb-pour-stream,
+    .hb-pour-drop,
+    .hb-tank-splash,
+    .hb-visual-panel.is-pouring .hb-tank-wrap {
+        animation: none !important;
+    }
+
+    .hb-pour-scene {
+        display: none;
     }
 }
