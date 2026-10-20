@@ -281,6 +281,7 @@ function App() {
   const [data, setData] = useState(getInitialData);
   const [today, setToday] = useState(getToday);
   const [note, setNote] = useState("");
+  const [journalDate, setJournalDate] = useState(getToday);
   const [waterGoal, setWaterGoal] = useState(8);
   // Separate millilitre-based hydration storage keeps older glass records intact.
   const HYDRATION_KEY = "daybyday-hydration-v1";
@@ -754,7 +755,7 @@ function App() {
     setMobileMenu(false);
 
     // Mind Arena is a separate page, not a dashboard section.
-    if (name === "Mind Arena") {
+    if (name === "Mind Arena" || name === "Journal") {
       return;
     }
 
@@ -793,7 +794,7 @@ function App() {
 
         {/* Sidebar */}
         <aside
-            className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-white/[0.07] bg-[#0E1017] transition-transform duration-200 lg:translate-x-0 ${
+            className={`fixed inset-y-0 left-0 z-50 flex h-dvh w-64 flex-col overflow-y-auto overscroll-contain border-r border-white/[0.07] bg-[#0E1017] transition-transform duration-200 lg:translate-x-0 ${
                 mobileMenu ? "translate-x-0" : "-translate-x-full"
             }`}
         >
@@ -803,7 +804,7 @@ function App() {
                 <Activity size={21} strokeWidth={2.5} />
               </div>
               <div>
-                <h1 className="font-bold tracking-[0.15em]">DAYBYDAY</h1>
+                <h1 className="font-bold tracking-[0.15em]">HabitO</h1>
                 <p className="mt-0.5 text-[10px] tracking-wider text-muted">
                   BUILD YOUR CONSISTENCY
                 </p>
@@ -940,11 +941,189 @@ function App() {
 
 
 
-          {activeTab === "Mind Arena" ? (
+          {activeTab === "Journal" ? (
+              <div className="mx-auto max-w-[1440px] p-4 sm:p-8">
+                <div className="mb-8">
+                  <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-lime-300/15 bg-lime-300/[0.06] px-3 py-1.5 text-xs text-lime-300">
+                    <NotebookPen size={14} />
+                    YOUR PERSONAL SPACE
+                  </div>
+
+                  <h2 className="text-3xl font-semibold tracking-tight">
+                    Your Journal
+                  </h2>
+
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
+                    Capture what happened, what you learned, and what you want to improve.
+                    Every date has its own reflection.
+                  </p>
+                </div>
+
+                <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.8fr)]">
+                  {/* Journal editor */}
+                  <Card className="p-5 sm:p-7">
+                    <SectionTitle
+                        icon={NotebookPen}
+                        title="Daily reflection"
+                        subtitle={formatDate(journalDate)}
+                    />
+
+                    <label
+                        htmlFor="journal-date"
+                        className="mb-2 block text-sm font-medium text-gray-200"
+                    >
+                      Choose a date
+                    </label>
+
+                    <input
+                        id="journal-date"
+                        type="date"
+                        value={journalDate}
+                        max={getToday()}
+                        onChange={(event) => {
+                          const selectedDate = event.target.value;
+                          if (!selectedDate) return;
+
+                          setJournalDate(selectedDate);
+                          setNote(data.days[selectedDate]?.note || "");
+                        }}
+                        className="mb-5 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-gray-100 outline-none focus:border-lime-300/40"
+                    />
+
+                    <textarea
+                        value={note}
+                        onChange={(event) => {
+                          const value = event.target.value;
+                          setNote(value);
+
+                          setData((previous) => {
+                            const existing = getDayRecord(previous, journalDate);
+
+                            return {
+                              ...previous,
+                              days: {
+                                ...previous.days,
+                                [journalDate]: {
+                                  ...existing,
+                                  note: value,
+                                },
+                              },
+                            };
+                          });
+                        }}
+                        placeholder="What went well today? What challenged you? What did you learn? What will you do differently tomorrow?"
+                        rows={10}
+                        maxLength={1500}
+                        className="w-full resize-y rounded-xl border border-white/[0.08] bg-black/20 p-4 text-sm leading-7 text-gray-200 outline-none transition placeholder:text-gray-600 focus:border-lime-300/40"
+                    />
+
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+          <span className="text-xs text-muted">
+            {note.length}/1500 characters
+          </span>
+
+                      <span className="inline-flex items-center gap-1.5 text-xs text-lime-300">
+            <CheckCircle2 size={14} />
+            Auto-saved on this device
+          </span>
+                    </div>
+                  </Card>
+
+                  {/* Previous journal entries */}
+                  <Card className="p-5 sm:p-6">
+                    <SectionTitle
+                        icon={CalendarDays}
+                        title="Past reflections"
+                        subtitle="Select a date to revisit your thoughts."
+                    />
+
+                    <div className="mb-4 rounded-xl border border-white/[0.06] bg-white/[0.025] p-4">
+                      <p className="text-2xl font-semibold text-lime-300">
+                        {
+                          Object.values(data.days).filter(
+                              (day) => typeof day.note === "string" && day.note.trim()
+                          ).length
+                        }
+                      </p>
+                      <p className="mt-1 text-xs text-muted">
+                        Saved journal entries
+                      </p>
+                    </div>
+
+                    <div className="max-h-[520px] space-y-2 overflow-y-auto pr-1">
+                      {Object.entries(data.days)
+                          .filter(
+                              ([date, day]) =>
+                                  typeof day.note === "string" &&
+                                  day.note.trim() &&
+                                  date <= getToday()
+                          )
+                          .sort(([dateA], [dateB]) => dateB.localeCompare(dateA))
+                          .map(([date, day]) => (
+                              <button
+                                  key={date}
+                                  type="button"
+                                  onClick={() => {
+                                    setJournalDate(date);
+                                    setNote(day.note || "");
+                                  }}
+                                  className={`w-full rounded-xl border p-4 text-left transition ${
+                                      journalDate === date
+                                          ? "border-lime-300/30 bg-lime-300/[0.07]"
+                                          : "border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05]"
+                                  }`}
+                              >
+                                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm font-medium text-gray-200">
+                    {formatDate(date)}
+                  </span>
+                                  {journalDate === date && (
+                                      <CheckCircle2
+                                          size={16}
+                                          className="shrink-0 text-lime-300"
+                                      />
+                                  )}
+                                </div>
+
+                                <p className="mt-2 line-clamp-2 break-words text-xs leading-5 text-muted">
+                                  {day.note}
+                                </p>
+                              </button>
+                          ))}
+
+                      {Object.entries(data.days).every(
+                          ([date, day]) =>
+                              date > getToday() ||
+                              typeof day.note !== "string" ||
+                              !day.note.trim()
+                      ) && (
+                          <div className="rounded-xl border border-dashed border-white/10 p-6 text-center">
+                            <NotebookPen
+                                size={24}
+                                className="mx-auto mb-3 text-gray-500"
+                            />
+                            <p className="text-sm text-gray-300">
+                              Your journal starts here.
+                            </p>
+                            <p className="mt-2 text-xs leading-5 text-muted">
+                              Write your first reflection and it will appear in this list.
+                            </p>
+                          </div>
+                      )}
+                    </div>
+                  </Card>
+                </div>
+
+                <footer className="mt-8 border-t border-white/[0.06] py-6 text-center text-xs text-gray-600">
+                  DAYBYDAY · Your journey, one day at a time.
+                </footer>
+              </div>
+          ) : activeTab === "Mind Arena" ? (
               <div className="mx-auto max-w-[1440px] p-4 sm:p-8">
                 <PuzzleArena />
               </div>
           ) : (
+
               <div
                   id="dashboard"
                   className="mx-auto max-w-[1440px] scroll-mt-24 p-4 sm:p-8"
@@ -1354,35 +1533,55 @@ function App() {
                       </p>
                     </Card>
 
-                    {/* Journal */}
-                    <Card id="journal" className="scroll-mt-24 p-5 sm:p-6">
-                      <SectionTitle
-                          icon={NotebookPen}
-                          title="Daily reflection"
-                          subtitle="A few honest lines can change your tomorrow."
-                      />
 
-                      <textarea
-                          value={note}
-                          onChange={(event) => {
-                            const value = event.target.value;
-                            setNote(value);
-                            updateRecord({ note: value });
-                          }}
-                          placeholder="What did you accomplish today? What challenged you? What is one thing you'll do better tomorrow?"
-                          rows={5}
-                          maxLength={1500}
-                          className="w-full rounded-xl border border-white/[0.08] bg-black/20 p-4 text-sm leading-6 text-gray-200 outline-none transition placeholder:text-gray-600 focus:border-lime-300/40"
-                      />
-
-                      <div className="mt-3 flex items-center justify-between gap-3">
-                  <span className="text-xs text-muted">
-                    {note.length}/1500 characters
-                  </span>
-                        <span className="flex items-center gap-1.5 text-xs text-lime-300">
-                    <CheckCircle2 size={14} />
-                    Auto-saved
-                  </span>
+                    {/* Fills the dashboard gap with a useful next-action card */}
+                    <Card className="relative overflow-hidden p-5 sm:p-6">
+                      <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-lime-300/[0.07] blur-3xl" />
+                      <div className="relative">
+                        <SectionTitle
+                            icon={Sparkles}
+                            title="Your next small win"
+                            subtitle="One clear next step keeps momentum going."
+                        />
+                        <div className="rounded-2xl border border-lime-300/10 bg-lime-300/[0.035] p-4 sm:p-5">
+                          <div className="flex items-start gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-lime-300/10 text-lime-300">
+                              {completedCount === habits.length && habits.length > 0 ? <CheckCircle2 size={20} /> : <Target size={20} />}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-semibold text-gray-100">
+                                {completedCount === habits.length && habits.length > 0
+                                    ? "You showed up for every habit."
+                                    : `Next up: ${habits.find((habit) => !record.completed?.[habit.id])?.name || "Choose one small task"}`}
+                              </p>
+                              <p className="mt-1.5 text-xs leading-5 text-muted">
+                                {completedCount === habits.length && habits.length > 0
+                                    ? "Take a moment to appreciate the consistency. If you have energy, add a short focus session."
+                                    : "Keep it small. Finish this one action, mark it complete, then move to the next."}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="mt-4 flex flex-wrap items-center gap-2">
+                            <span className="rounded-full border border-white/[0.08] bg-black/20 px-3 py-1.5 text-[11px] text-gray-300">
+                              {Math.max(0, habits.length - completedCount)} habits left
+                            </span>
+                            <span className="rounded-full border border-sky-300/10 bg-sky-300/[0.045] px-3 py-1.5 text-[11px] text-sky-200">
+                              {hydrationIntakeMl >= hydrationData.capacityMl ? "Hydration goal reached" : `${Math.max(0, hydrationData.capacityMl - hydrationIntakeMl)} ml to water goal`}
+                            </span>
+                          </div>
+                          <button
+                              type="button"
+                              onClick={() => {
+                                const nextHabit = habits.find((habit) => !record.completed?.[habit.id]);
+                                if (nextHabit) toggleHabit(nextHabit.id);
+                                else navigate("Focus Mode");
+                              }}
+                              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-lime-300 px-4 py-2.5 text-xs font-semibold text-gray-950 transition hover:bg-lime-200"
+                          >
+                            {completedCount === habits.length && habits.length > 0 ? "Open a focus session" : "Complete next habit"}
+                            <ArrowUpRight size={14} />
+                          </button>
+                        </div>
                       </div>
                     </Card>
                   </div>
@@ -1700,7 +1899,7 @@ function App() {
                   </Card>
                 </section>
                 <footer className="mt-8 flex flex-col items-center justify-between gap-2 border-t border-white/[0.06] py-6 text-xs text-gray-600 sm:flex-row">
-                  <p>DAYBYDAY · Built one day at a time.</p>
+                  <p>HabitO · Built one day at a time.</p>
                   <p>Your journey. Your pace. Your progress.</p>
                 </footer>
               </div>
