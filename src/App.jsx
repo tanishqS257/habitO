@@ -14,6 +14,7 @@ import {
   Droplets,
   Flame,
   LayoutDashboard,
+  MessageSquareText,
   Menu,
   NotebookPen,
   Plus,
@@ -32,7 +33,9 @@ import {
   Play,
   RotateCcw,
   Timer,
+  Code2Icon,
 } from "lucide-react";
+import Feedback from "./components/Feedback";
 import PuzzleArena from "./components/PuzzleArena.jsx";
 import HydrationBottle from "./components/HydrationBottle.jsx";
 const STORAGE_KEY = "daybyday-data-v1";
@@ -748,14 +751,15 @@ function App() {
     { name: "Journal", icon: NotebookPen },
     { name: "Progress", icon: Activity },
     { name: "Mind Arena", icon: Brain },
+    { name: "Feedback", icon: MessageSquareText },
   ];
 
   function navigate(name) {
     setActiveTab(name);
     setMobileMenu(false);
 
-    // Mind Arena is a separate page, not a dashboard section.
-    if (name === "Mind Arena" || name === "Journal") {
+    // These pages render separately instead of scrolling to dashboard sections.
+    if (name === "Mind Arena" || name === "Journal" || name === "Feedback") {
       return;
     }
 
@@ -1114,13 +1118,15 @@ function App() {
                   </Card>
                 </div>
 
-                <footer className="mt-8 border-t border-white/[0.06] py-6 text-center text-xs text-gray-600">
-                  DAYBYDAY · Your journey, one day at a time.
-                </footer>
+
               </div>
           ) : activeTab === "Mind Arena" ? (
               <div className="mx-auto max-w-[1440px] p-4 sm:p-8">
                 <PuzzleArena />
+              </div>
+          ) : activeTab === "Feedback" ? (
+              <div className="mx-auto max-w-[1440px] p-4 sm:p-8">
+                <Feedback />
               </div>
           ) : (
 
@@ -1898,9 +1904,17 @@ function App() {
                     </div>
                   </Card>
                 </section>
-                <footer className="mt-8 flex flex-col items-center justify-between gap-2 border-t border-white/[0.06] py-6 text-xs text-gray-600 sm:flex-row">
-                  <p>HabitO · Built one day at a time.</p>
-                  <p>Your journey. Your pace. Your progress.</p>
+                <footer className="mt-8 border-t border-white/[0.06] py-6">
+                  <div className="flex items-center justify-center gap-2 text-sm">
+                    <span className="text-gray-500">Developer</span>
+                    <Code2 size={16} className="text-lime-300" />
+                    <span className="font-semibold text-gray-200">ThomasShelby</span>
+                    <span className="text-lime-300">.</span>
+                  </div>
+
+                  <p className="mt-3 text-center text-xs text-gray-500">
+                    © 2026 HabitO · Built one day at a time.
+                  </p>
                 </footer>
               </div>
           )}
