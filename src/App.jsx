@@ -33,12 +33,60 @@ import {
   Play,
   RotateCcw,
   Timer,
-  Code2Icon,
 } from "lucide-react";
 import Feedback from "./components/Feedback";
 import PuzzleArena from "./components/PuzzleArena.jsx";
 import HydrationBottle from "./components/HydrationBottle.jsx";
 const STORAGE_KEY = "daybyday-data-v1";
+
+// Replace this placeholder with the ID shown on chrome://extensions.
+const FOCUS_GUARD_EXTENSION_ID = "REPLACE_WITH_YOUR_CHROME_EXTENSION_ID";
+
+function sendFocusGuardCommand(enabled, endsAt = null) {
+  return new Promise((resolve) => {
+    const runtime = globalThis.chrome?.runtime;
+
+    if (
+        !runtime?.sendMessage ||
+        FOCUS_GUARD_EXTENSION_ID.startsWith("REPLACE_WITH_")
+    ) {
+      console.info(
+          "Focus Guard is not connected yet. Add your Chrome extension ID to App.jsx."
+      );
+      resolve(false);
+      return;
+    }
+
+    runtime.sendMessage(
+        FOCUS_GUARD_EXTENSION_ID,
+        {
+          type: "SET_FOCUS_MODE",
+          enabled,
+          endsAt,
+        },
+        (response) => {
+          const error = runtime.lastError;
+
+          if (error) {
+            console.warn("Focus Guard connection failed:", error.message);
+            resolve(false);
+            return;
+          }
+
+          if (!response?.ok) {
+            console.warn(
+                "Focus Guard did not accept the command:",
+                response?.error || "No response from extension"
+            );
+            resolve(false);
+            return;
+          }
+
+          resolve(true);
+        }
+    );
+  });
+}
 
 const QUOTE_LIBRARY = [
   { text: "Your time is limited, so don't waste it living someone else's life.", author: "Steve Jobs", source: "Stanford commencement address · 2005", category: "MAKE TODAY COUNT" },
@@ -423,6 +471,23 @@ function App() {
       // The timer can still work if storage is unavailable.
     }
   }, [focusSessions]);
+
+  // Keep Focus Guard synchronized with the website timer.
+  // Protection is active only while a focus session is actively running,
+  // not while paused or during the short break.
+  useEffect(() => {
+    const shouldBlock =
+        focusRunning &&
+        focusMode === "focus" &&
+        typeof focusEndAt === "number" &&
+        focusEndAt > Date.now();
+
+    if (shouldBlock) {
+      sendFocusGuardCommand(true, focusEndAt);
+    } else {
+      sendFocusGuardCommand(false);
+    }
+  }, [focusRunning, focusMode, focusEndAt]);
 
   useEffect(() => {
     if (!focusRunning || !focusEndAt) return;
@@ -1118,7 +1183,9 @@ function App() {
                   </Card>
                 </div>
 
-
+                <footer className="mt-8 border-t border-white/[0.06] py-6 text-center text-xs text-gray-600">
+                  DAYBYDAY · Your journey, one day at a time.
+                </footer>
               </div>
           ) : activeTab === "Mind Arena" ? (
               <div className="mx-auto max-w-[1440px] p-4 sm:p-8">
@@ -1904,21 +1971,88 @@ function App() {
                     </div>
                   </Card>
                 </section>
-                <footer className="mt-8 border-t border-white/[0.06] py-6">
-                  <div className="flex items-center justify-center gap-2 text-sm">
-                    <span className="text-gray-500">Developer</span>
-                    <Code2 size={16} className="text-lime-300" />
-                    <span className="font-semibold text-gray-200">ThomasShelby</span>
-                    <span className="text-lime-300">.</span>
-                  </div>
-
-                  <p className="mt-3 text-center text-xs text-gray-500">
-                    © 2026 HabitO · Built one day at a time.
-                  </p>
+                <footer className="mt-8 flex flex-col items-center justify-between gap-2 border-t border-white/[0.06] py-6 text-xs text-gray-600 sm:flex-row">
+                  <p>HabitO · Built one day at a time.</p>
+                  <p>Your journey. Your pace. Your progress.</p>
                 </footer>
               </div>
           )}
         </main>
+
+        {focusRunning && focusMode === "focus" && (
+            <div
+                role="dialog"
+                aria-modal="true"
+                aria-label="Focus lock screen"
+                className="fixed inset-0 z-[100] flex min-h-dvh items-center justify-center overflow-y-auto bg-[#070A10] px-5 py-8 text-white"
+            >
+              <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+                <div className="absolute left-1/2 top-1/2 h-[min(80vw,680px)] w-[min(80vw,680px)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-lime-300/[0.055] blur-3xl" />
+                <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: "radial-gradient(#d9f99d 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
+              </div>
+
+              <div className="relative z-10 mx-auto flex w-full max-w-2xl flex-col items-center text-center">
+                <div className="mb-7 flex h-16 w-16 items-center justify-center rounded-2xl border border-lime-300/20 bg-lime-300/10 text-lime-300 shadow-[0_0_60px_rgba(190,242,100,0.08)]">
+                  <ShieldCheck size={34} strokeWidth={1.7} />
+                </div>
+
+                <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-lime-300">
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-lime-300" />
+                  Focus lock is active
+                </p>
+                <h2 className="text-3xl font-semibold tracking-tight sm:text-5xl">Protect this time.</h2>
+                <p className="mt-4 max-w-md text-sm leading-6 text-gray-400 sm:text-base">One task, one timer, no distractions. Stay here and give your attention to what matters.
+                </p>
+
+                <div className="mt-10 w-full rounded-3xl border border-white/10 bg-white/[0.035] px-5 py-8 shadow-2xl backdrop-blur-sm sm:px-10 sm:py-10">
+                  <p className="text-xs font-medium uppercase tracking-[0.22em] text-gray-500">Time remaining</p>
+                  <p className="mt-4 text-7xl font-semibold tracking-[-0.06em] tabular-nums sm:text-8xl">
+                    {String(Math.floor(focusRemaining / 60)).padStart(2, "0")}:{String(focusRemaining % 60).padStart(2, "0")}
+                  </p>
+                  <div className="mx-auto mt-6 h-1.5 max-w-sm overflow-hidden rounded-full bg-white/10">
+                    <div
+                        className="h-full rounded-full bg-lime-300 transition-[width] duration-300"
+                        style={{ width: `${Math.max(0, Math.min(100, (focusRemaining / Math.max(1, focusDuration * 60)) * 100))}%` }}
+                    />
+                  </div>
+                  <div className="mx-auto mt-8 max-w-md rounded-xl border border-white/[0.07] bg-black/20 px-4 py-4">
+                    <p className="text-[11px] uppercase tracking-[0.2em] text-gray-500">Your one task</p>
+                    <p className="mt-2 break-words text-lg font-medium text-gray-100">{focusTask.trim() || "Stay focused on the next step"}</p>
+                  </div>
+
+                  <div className="mx-auto mt-8 flex w-full max-w-md flex-col gap-3 sm:flex-row">
+                    <button
+                        type="button"
+                        onClick={() => {
+                          setFocusRemaining(Math.max(0, Math.ceil((focusEndAt - Date.now()) / 1000)));
+                          setFocusRunning(false);
+                          setFocusEndAt(null);
+                        }}
+                        className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-lime-300 px-5 py-3.5 font-semibold text-gray-950 transition hover:bg-lime-200 focus:outline-none focus:ring-2 focus:ring-lime-200 focus:ring-offset-2 focus:ring-offset-[#10130d]"
+                    >
+                      <Pause size={18} /> Pause focus
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                          setFocusRunning(false);
+                          setFocusEndAt(null);
+                          setFocusMode("focus");
+                          setFocusRemaining(focusDuration * 60);
+                        }}
+                        className="flex items-center justify-center gap-2 rounded-xl border border-white/15 px-5 py-3.5 font-medium text-gray-300 transition hover:border-white/25 hover:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-white/30"
+                    >
+                      <RotateCcw size={17} /> Stop session
+                    </button>
+                  </div>
+                </div>
+
+                <p className="mt-6 flex items-center gap-2 text-xs text-gray-600">
+                  <Target size={14} /> This screen stays until you pause, stop, or the timer ends.
+                </p>
+              </div>
+            </div>
+        )}
 
         {notice && (
             <div
