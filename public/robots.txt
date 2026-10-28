@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://habito-alpha.vercel.app/sitemap.xml
